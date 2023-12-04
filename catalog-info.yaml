@@ -1,0 +1,27 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: mage-kubernetes-lib
+  title: Mage Kubernetes Library
+  tags:
+    - "go"
+    - "pkg"
+    - "mage"
+    - "kubernetes"
+  annotations:
+    github.com/project-slug: coopnorge/mage-kubernetes-lib
+    backstage.io/techdocs-ref: dir:.
+  links:
+    - url: https://magefile.org/
+      title: Official Mage site
+      icon: web
+spec:
+  type: library
+  lifecycle: experimental
+  owner: engineering
+  dependsOn:
+    - component:devtools-golang-v1beta1
+    - component:github-workflow-supply-chain-security-validation
+    - component:github-workflow-techdocs
+    - component:techdocs
+    - component:vale-coop
