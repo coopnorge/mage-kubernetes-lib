@@ -1,0 +1,27 @@
+---
+version: 2
+
+registries:
+
+  coop-ghcr:
+    type: docker-registry
+    url: ghcr.io
+    username: CoopGithubServiceaccount
+    password: ${{ secrets.DEPENDABOT_GHCR_PULL }}
+
+  coop-terraform:
+    type: terraform-registry
+    url: https://app.spacelift.io
+    token: ${{ secrets.SPACELIFT_READ_TOKEN }}
+
+  github-coopnorge:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: ${{secrets.DEPENDABOT_GHCR_PULL}}
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"

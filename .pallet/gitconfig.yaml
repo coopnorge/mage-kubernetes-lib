@@ -1,0 +1,26 @@
+---
+# reference https://github.com/coopnorge/cloud-platform-apis/blob/main/cloud-platform-apis/templates/repositoryconfig.github.coop.no/definition.yaml
+# status of this repository: https://argocd.internal.coop/applications?search=pallet-mage-kubernetes-lib&showFavorites=false&proj=&sync=&autoSync=&health=&namespace=&cluster=&labels=
+apiVersion: github.coop.no/v1alpha1
+kind: RepositoryConfig
+metadata:
+  name: repository-config
+spec:
+  description: Mage library to support kubernetes related ci
+  branches:
+    default: main
+    protection:
+    - id: main
+      pattern: main
+      enforceAdmins: true
+      requireLinearHistory: true
+      requiredStatusChecks:
+        checks:
+        - "policy-bot: main"
+        strict: false
+      requiredPullRequestReviews:
+        requiredApprovingReviewCount: 0
+        requireCodeOwnerReviews: false
+        requireLastPushApproval: true
+
+
