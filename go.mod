@@ -1,4 +1,4 @@
-module mage
+module github.com/coopnorge/mage-kubernetes-lib
 
 go 1.20
 
