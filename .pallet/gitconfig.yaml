@@ -17,6 +17,7 @@ spec:
       requiredStatusChecks:
         checks:
         - "policy-bot: main"
+        - "Go CI"
         strict: false
       requiredPullRequestReviews:
         requiredApprovingReviewCount: 0
