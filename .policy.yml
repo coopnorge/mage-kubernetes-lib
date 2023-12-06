@@ -1,6 +1,7 @@
 # Policy bot configuration
 # https://github.com/palantir/policy-bot#configuration
 policy:
+  approval:
   - or:
     - Dependabot update
     - Code change
