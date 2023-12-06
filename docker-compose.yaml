@@ -1,0 +1,23 @@
+services:
+  golang-devtools:
+    build:
+      context: docker-compose
+      target: golang-devtools
+      dockerfile: Dockerfile
+    privileged: false
+    command: validate
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    volumes:
+      - .:/srv/workspace:z
+      - ${DOCKER_CONFIG:-~/.docker}:/root/.docker
+      - ${GIT_CONFIG:-~/.gitconfig}:${GIT_CONFIG_GUEST:-/root/.gitconfig}
+      - ${SSH_CONFIG:-~/.ssh}:/root/.ssh
+      - ${XDG_CACHE_HOME:-xdg-cache-home}:/root/.cache
+      # ${x:-y} explained here https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=3.5.3%20Shell%20Parameter%20Expansion
+    environment:
+      GOMODCACHE: /root/.cache/go-mod
+volumes:
+  xdg-cache-home: { }
+  nothing: { }
