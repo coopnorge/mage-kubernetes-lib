@@ -7,6 +7,7 @@ metadata:
   name: repository-config
 spec:
   description: Mage library to support kubernetes related ci
+  visibility: public
   branches:
     default: main
     protection:
