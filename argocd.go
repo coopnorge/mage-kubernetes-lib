@@ -7,6 +7,7 @@ import (
 
 	"github.com/magefile/mage/sh"
 	"gopkg.in/yaml.v3"
+    argocd_v1alpha "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 )
 
 // ArgoCDAppHelm contains the info for rendering a helm file
@@ -39,6 +40,8 @@ type ArgoCDApp struct {
 
 func getArgoCDDeployments(repoURL string) ([]ArgoCDApp, error) {
 	var argoCDAppList []ArgoCDApp
+	var a argocd_v1alpha.Application
+	fmt.Print(a)
 	env := map[string]string{}
 
 	if token, ok := os.LookupEnv("ARGOCD_API_TOKEN"); ok {
