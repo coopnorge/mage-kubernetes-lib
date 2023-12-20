@@ -22,15 +22,20 @@ func TestGitRemoteParser(t *testing.T) {
 	}{
 		{"origin     git@github.com:coopnorge/helloworld.git (fetch)", "https://github.com/coopnorge/helloworld", nil},
 		{"origin     https://github.com/coopnorge/helloworld.git (fetch)", "https://github.com/coopnorge/helloworld", nil},
-		{"origin     http://github.com/coopnorge/helloworld.git (fetch)", "", NewErrUnableToParseRemoteURL("http://github.com/coopnorge/helloworld.git")},
+		{"origin     http://github.com/coopnorge/helloworld.git (fetch)", "", fmt.Errorf(unableToParseRemoteErr, "http://github.com/coopnorge/helloworld.git")},
 	}
 	for _, tt := range tests {
 		testname := fmt.Sprintf("%s,%s", tt.remote, tt.want)
 		t.Run(testname, func(t *testing.T) {
 			got, err := gitRemoteParser(tt.remote)
-			if got != tt.want || !errors.Is(err, tt.err) {
-				t.Errorf("\n got: %s,%v \nwant: %s,%v", got, err, tt.want, tt.err)
+			if got == tt.want &&
+				(errors.Is(err, tt.err) || // This is to compare if the error is of the same type, which
+					// happen when both errors are nil,
+					// The line below is to compare if the error message is the same as string
+					err.Error() == tt.err.Error()) {
+				return
 			}
+			t.Errorf("\n got: %s,%v \nwant: %s,%v", got, err, tt.want, tt.err)
 		})
 	}
 }
