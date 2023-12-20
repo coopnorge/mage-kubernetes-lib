@@ -3,7 +3,7 @@ package magekubernetes
 import (
 	"strings"
 
-	"github.com/go-git/go-git/v5/git"
+	"github.com/go-git/go-git/v5"
 )
 
 func repoURL() (string, error) {
