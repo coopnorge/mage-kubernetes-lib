@@ -29,10 +29,7 @@ func TestGitRemoteParser(t *testing.T) {
 		t.Run(testname, func(t *testing.T) {
 			got, err := gitRemoteParser(tt.remote)
 			if got == tt.want &&
-				(errors.Is(err, tt.err) || // This is to compare if the error is of the same type, which
-					// happen when both errors are nil,
-					// The line below is to compare if the error message is the same as string
-					err.Error() == tt.err.Error()) {
+				(errors.Is(err, tt.err) || err.Error() == tt.err.Error()) {
 				return
 			}
 			t.Errorf("\n got: %s,%v \nwant: %s,%v", got, err, tt.want, tt.err)

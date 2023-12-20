@@ -20,8 +20,6 @@ func repoURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	//origin := strings.Fields(remote.String())[1]
-
 	return gitRemoteParser(remote.String())
 }
 
