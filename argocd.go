@@ -17,13 +17,15 @@ type ArgoCDAppHelm struct {
 
 // ArgoCDAppSource contains the info where to find the source for rendering
 type ArgoCDAppSource struct {
-	Helm ArgoCDAppHelm `yaml:"helm"`
-	Path string        `yaml:"path"`
+	Helm    ArgoCDAppHelm `yaml:"helm"`
+	Path    string        `yaml:"path"`
+	RepoRUL string        `yaml:"repoURL"`
 }
 
 // ArgoCDAppSpec contains the app source
 type ArgoCDAppSpec struct {
-	Source ArgoCDAppSource `yaml:"source"`
+	Source  ArgoCDAppSource   `yaml:"source"`
+	Sources []ArgoCDAppSource `yaml:"sources"`
 }
 
 // ArgoCDAppMetadata contains the app name
@@ -55,8 +57,8 @@ func getArgoCDDeployments(repoURL string) ([]ArgoCDApp, error) {
 			return nil, err
 		}
 	}
-
-	appYaml, err := sh.OutputWith(env, "argocd", "--grpc-web", "app", "list", "-r", repoURL, "-o", "yaml")
+	// use label selector to quickly exclude pallet apps
+	appYaml, err := sh.OutputWith(env, "argocd", "--grpc-web", "app", "list", "-r", repoURL, "-l", "component!=pallet-config", "-o", "yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +100,7 @@ func listArgoCDDeployments() error {
 			fmt.Println("Found helm deployment with name: " + trackedDeployment.Metadata.Name)
 			fmt.Println("  path: " + trackedDeployment.Spec.Source.Path)
 			fmt.Println("  valueFiles: " + strings.Join(trackedDeployment.Spec.Source.Helm.ValueFiles, ", "))
-		} else if _, err := os.Stat(trackedDeployment.Spec.Source.Path + "/kustomize.yaml"); err == nil {
+		} else if _, err := os.Stat(trackedDeployment.Spec.Source.Path + "/kustomization.yaml"); err == nil {
 			fmt.Println("---")
 			fmt.Println("Found kustomize deployment with name: " + trackedDeployment.Metadata.Name)
 			fmt.Println("  path: " + trackedDeployment.Spec.Source.Path)
