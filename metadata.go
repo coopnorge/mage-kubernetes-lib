@@ -1,7 +1,6 @@
 package magekubernetes
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -29,6 +28,6 @@ func gitRemoteParser(remote string) (string, error) {
 		toHTTPS := "https://github.com/" + strings.Split(url, ":")[1]
 		return strings.TrimSuffix(toHTTPS, ".git"), nil
 	}
-	return "", fmt.Errorf("Unable to parse remote url %v", remote)
+	return "", NewErrUnableToParseRemoteURL(url)
 
 }

@@ -1,6 +1,7 @@
 package magekubernetes
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
@@ -21,13 +22,13 @@ func TestGitRemoteParser(t *testing.T) {
 	}{
 		{"origin     git@github.com:coopnorge/helloworld.git (fetch)", "https://github.com/coopnorge/helloworld", nil},
 		{"origin     https://github.com/coopnorge/helloworld.git (fetch)", "https://github.com/coopnorge/helloworld", nil},
-		{"origin     http://github.com/coopnorge/helloworld.git (fetch)", "", fmt.Errorf("Unable to parse remote url %v", "origin     http://github.com/coopnorge/helloworld.git (fetch)")},
+		{"origin     http://github.com/coopnorge/helloworld.git (fetch)", "", NewErrUnableToParseRemoteURL("http://github.com/coopnorge/helloworld.git")},
 	}
 	for _, tt := range tests {
 		testname := fmt.Sprintf("%s,%s", tt.remote, tt.want)
 		t.Run(testname, func(t *testing.T) {
 			got, err := gitRemoteParser(tt.remote)
-			if got != tt.want || err != tt.err {
+			if got != tt.want || !errors.Is(err, tt.err) {
 				t.Errorf("\n got: %s,%v \nwant: %s,%v", got, err, tt.want, tt.err)
 			}
 		})
