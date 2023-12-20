@@ -58,7 +58,8 @@ func getArgoCDDeployments(repoURL string) ([]ArgoCDApp, error) {
 		}
 	}
 	// use label selector to quickly exclude pallet apps
-	appYaml, err := sh.OutputWith(env, "argocd", "--grpc-web", "app", "list", "-r", repoURL, "-l", "component!=pallet-config", "-o", "yaml")
+	fmt.Println(repoURL)
+	appYaml, err := sh.OutputWith(env, "argocd", "--grpc-web", "app", "list", "-r", repoURL, "-o", "yaml")
 	if err != nil {
 		return nil, err
 	}
