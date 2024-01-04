@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/magefile/mage/sh" // sh contains helpful utility functions, like RunV
+	"gopkg.in/yaml.v3"
 )
 
 func renderTemplate(app ArgoCDApp) (string, error) {
@@ -28,6 +29,12 @@ func renderHelm(source ArgoCDAppSource) (string, error) {
 		return "", err
 	}
 	err = os.Chdir(source.Path)
+	if err != nil {
+		return "", err
+	}
+	// temporary fix  until https://github.com/helm/helm/issues/7214 is fixed
+	// again
+	err = addHelmRepos("./")
 	if err != nil {
 		return "", err
 	}
@@ -89,6 +96,25 @@ func renderTemplates() (string, error) {
 	return strings.Join(files, ","), nil
 }
 
+func addHelmRepos(path string) error {
+	var chart HelmChart
+	chartfile, err := os.ReadFile(filepath.Join(path, "Chart.yaml"))
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal([]byte(chartfile), &chart)
+	if err != nil {
+		return err
+	}
+	for _, dep := range chart.Dependencies {
+		err := sh.Run("helm", "repo", "add", dep.Name, dep.Repository)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func listFilesInDirectory(path string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
@@ -109,4 +135,17 @@ func tempDir() (string, error) {
 		return "", err
 	}
 	return dir, nil
+}
+
+// HelmChart contains all metadata of an helm chart
+type HelmChart struct {
+	Dependencies []HelmDependency `yaml:"dependencies"`
+}
+
+// HelmDependency contains a dependency of a helmchart
+type HelmDependency struct {
+	Name       string `yaml:"name"`
+	Version    string `yaml:"version"`
+	Repository string `yaml:"repository"`
+	Alias      string `yaml:"alias"`
 }

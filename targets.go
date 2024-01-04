@@ -80,9 +80,8 @@ func kubeConform(paths string) error {
 	cmdOptions := []string{
 		"-strict",
 		"-verbose",
-		"-ignore-missing-schemas",
 		"-schema-location", "default",
-		"-schema-location", "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/api-production/'{{ .ResourceKind }}{{ .KindSuffix }}.json'"}
+		"-schema-location", "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/api-platform/{{ .ResourceKind }}{{ .KindSuffix }}.json"}
 	out, err := sh.Output("kubeconform", append(cmdOptions, strings.Split(paths, ",")...)...)
 	if err != nil {
 		fmt.Printf("kubeconform returned exit code: %d\n Output:\n %v Error:\n %v\n", sh.ExitStatus(err), out, err)
