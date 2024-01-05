@@ -15,7 +15,8 @@ func Validate() error {
 		return err
 	}
 	mg.Deps(mg.F(kubeScore, templates))
-	mg.Deps(mg.F(kubeConform, templates))
+	mg.Deps(mg.F(kubeConform, templates, "api-platform"))
+	mg.Deps(Pallets)
 	fmt.Println("Validation passed")
 	return nil
 }
@@ -35,7 +36,17 @@ func KubeConform() error {
 	if err != nil {
 		return err
 	}
-	return kubeConform(templates)
+	return kubeConform(templates, "api-platform")
+}
+
+// Pallets validates the pallet files in the .pallet directory
+func Pallets() error {
+	pallets, err := listPalletFiles()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Validating Pallets")
+	return kubeConform(strings.Join(pallets, ","), "pallets")
 }
 
 // ArgoCDListApps show the apps related to this repository
@@ -76,12 +87,16 @@ func kubeScore(paths string) error {
 	return nil
 }
 
-func kubeConform(paths string) error {
+func kubeConform(paths string, schemaSelection string) error {
+	if len(paths) == 0 {
+		fmt.Println("no templates provided")
+		return nil
+	}
 	cmdOptions := []string{
 		"-strict",
 		"-verbose",
 		"-schema-location", "default",
-		"-schema-location", "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/api-platform/{{ .ResourceKind }}{{ .KindSuffix }}.json"}
+		"-schema-location", "https://raw.githubusercontent.com/coopnorge/kubernetes-schemas/main/" + schemaSelection + "/{{ .ResourceKind }}{{ .KindSuffix }}.json"}
 	out, err := sh.Output("kubeconform", append(cmdOptions, strings.Split(paths, ",")...)...)
 	if err != nil {
 		fmt.Printf("kubeconform returned exit code: %d\n Output:\n %v Error:\n %v\n", sh.ExitStatus(err), out, err)
