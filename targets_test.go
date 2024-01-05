@@ -23,16 +23,16 @@ func TestOKKubeScore(t *testing.T) {
 
 func TestFailedKubeConform(t *testing.T) {
 	paths := strings.Join([]string{"tests/templates/fail-schema/templates/deployment.yaml", "tests/templates/fail-schema/templates/service.yaml"}, ",")
-	err := kubeConform(paths)
+	err := kubeConform(paths, "api-platform")
 	if err == nil {
-		t.Fatalf(`kubeConform(paths) should fail but passed`)
+		t.Fatalf(`kubeConform(paths,"api-platform) should fail but passed`)
 	}
 }
 
 func TestOKKubeConform(t *testing.T) {
 	paths := strings.Join([]string{"tests/templates/ok/templates/configmap.yaml"}, ",")
-	err := kubeConform(paths)
+	err := kubeConform(paths, "api-platform")
 	if err != nil {
-		t.Fatalf(`kubeConform(paths) should pass but failed with error %v`, err)
+		t.Fatalf(`kubeConform(paths,"api-platform) should pass but failed with error %v`, err)
 	}
 }
