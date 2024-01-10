@@ -76,6 +76,10 @@ func ArgoCDDiff() error {
 }
 
 func kubeScore(paths string) error {
+	if paths == "" {
+		fmt.Printf("No files presented to kube-score, skipping")
+		return nil
+	}
 	cmdOptions := []string{
 		"score"}
 	out, err := sh.Output("kube-score", append(cmdOptions, strings.Split(paths, ",")...)...)
@@ -88,8 +92,8 @@ func kubeScore(paths string) error {
 }
 
 func kubeConform(paths string, schemaSelection string) error {
-	if len(paths) == 0 {
-		fmt.Println("no templates provided")
+	if paths == "" {
+		fmt.Printf("No files presented to kubeconform, skipping")
 		return nil
 	}
 	cmdOptions := []string{
