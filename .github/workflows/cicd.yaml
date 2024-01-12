@@ -71,6 +71,6 @@ jobs:
       group: ${{ github.repository }}-${{ github.workflow }}-pallet-ci-${{ github.ref }}
       cancel-in-progress: true
     needs: ["setup"]
-    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@use-kubernetes-devtools
+    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@c019380575504edcba517bb7ad68a0bd8a960c2f
     with:
       do-argocd-diff: false
