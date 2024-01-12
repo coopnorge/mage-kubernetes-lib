@@ -21,9 +21,9 @@ jobs:
           list-files: json
           filters: |
             golang:
-              - '!./pallet/*'
+              - '!.pallet/*'
             pallet:
-              - './pallet/*'
+              - '.pallet/*'
       - name: Debug ...
         run: |
           echo "::${{ steps.changes.outputs }}"
