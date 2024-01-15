@@ -41,24 +41,21 @@ type ArgoCDApp struct {
 
 func getArgoCDDeployments(repoURL string) ([]ArgoCDApp, error) {
 	var argoCDAppList []ArgoCDApp
-	env := map[string]string{}
 
-	if token, ok := os.LookupEnv("ARGOCD_API_TOKEN"); ok {
-		server, ok := env["ARGOCD_SERVER_NAME"]
-		if !ok {
-			return nil, fmt.Errorf("When using ARGOCD_API_TOKEN, you are also required to set ARGOCD_SERVER_NAME")
-		}
-		env["ARGOCD_API_TOKEN"] = token
-		env["ARGOCD_SERVER_NAME"] = server
-	} else {
-		err := sh.Run("argocd", "context")
-		if err != nil {
-			fmt.Println("Make use $HOME/.argocd is correctly mounted or use ARGOCD_API_TOKEN env var")
-			return nil, err
-		}
+	cmdOptions := []string{
+		"--grpc-web",
+		"app",
+		"list",
+		"-r", repoURL,
+		"-l", "component!=pallet-config", // use label selector to quickly exclude pallet apps
+		"-o", "yaml",
 	}
-	// use label selector to quickly exclude pallet apps
-	appYaml, err := sh.OutputWith(env, "argocd", "--grpc-web", "app", "list", "-r", repoURL, "-l", "component!=pallet-config", "-o", "yaml")
+
+	authOptions, err := getArgoCDAuth()
+	if err != nil {
+		return nil, err
+	}
+	appYaml, err := sh.Output("argocd", append(cmdOptions, authOptions...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +68,21 @@ func getArgoCDDeployments(repoURL string) ([]ArgoCDApp, error) {
 
 func getArgoCDDiff(apps []ArgoCDApp) error {
 	env := map[string]string{"KUBECTL_EXTERNAL_DIFF": "dyff between --omit-header"}
-	if token, ok := os.LookupEnv("ARGOCD_API_TOKEN"); ok {
-		env["ARGOCD_API_TOKEN"] = token
+	authOptions, err := getArgoCDAuth()
+	if err != nil {
+		return err
 	}
 	for _, app := range apps {
-		diff, err := sh.OutputWith(env, "argocd", "--loglevel", "error", "--grpc-web", "app", "diff", app.Metadata.Name, "--refresh", "--local", app.Spec.Source.Path)
+		cmdOptions := []string{
+			"--loglevel", "error",
+			"--grpc-web",
+			"app",
+			"diff",
+			app.Metadata.Name,
+			"--refresh",
+			"--local", app.Spec.Source.Path,
+		}
+		diff, err := sh.OutputWith(env, "argocd", append(cmdOptions, authOptions...)...)
 		if sh.ExitStatus(err) == 2 {
 			return err
 		}
@@ -83,6 +90,24 @@ func getArgoCDDiff(apps []ArgoCDApp) error {
 		fmt.Println(diff)
 	}
 	return nil
+}
+
+func getArgoCDAuth() ([]string, error) {
+	authOptions := []string{}
+	if token, ok := os.LookupEnv("ARGOCD_API_TOKEN"); ok {
+		server, ok := os.LookupEnv("ARGOCD_SERVER")
+		if !ok {
+			return nil, fmt.Errorf("When using ARGOCD_API_TOKEN, you are also required to set ARGOCD_SERVER")
+		}
+		authOptions = append(authOptions, "--auth-token", token, "--server", server)
+	} else {
+		err := sh.Run("argocd", "context")
+		if err != nil {
+			fmt.Println("Make use '$HOME/.argocd' is mounted to /root/.config/ or use ARGOCD_API_TOKEN and ARGOCD_SERVER environment variable")
+			return nil, err
+		}
+	}
+	return authOptions, nil
 }
 
 func listArgoCDDeployments() error {
