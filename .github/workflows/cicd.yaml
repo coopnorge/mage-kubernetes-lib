@@ -74,5 +74,6 @@ jobs:
     uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@b86a86083971ff4a1b3fa0ed4c1f7873ba20297b
     with:
       do-argocd-diff: false
+      validate-target: pallets
     secrets:
       argocd-api-token: ${{ secrets.ARGOCD_API_TOKEN }}

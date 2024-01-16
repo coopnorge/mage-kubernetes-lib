@@ -10,7 +10,6 @@ spec:
   visibility: public
   branches:
     default: main
-    bla: boe
     protection:
     - id: main
       pattern: main
