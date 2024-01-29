@@ -125,7 +125,7 @@ func listArgoCDDeployments() error {
 			fmt.Println("Found helm deployment with name: " + trackedDeployment.Metadata.Name)
 			fmt.Println("  path: " + trackedDeployment.Spec.Source.Path)
 			fmt.Println("  valueFiles: " + strings.Join(trackedDeployment.Spec.Source.Helm.ValueFiles, ", "))
-		} else if _, err := os.Stat(trackedDeployment.Spec.Source.Path + "/kustomization.yaml"); err == nil {
+		} else if isKustomizeDir(trackedDeployment.Spec.Source.Path) {
 			fmt.Println("---")
 			fmt.Println("Found kustomize deployment with name: " + trackedDeployment.Metadata.Name)
 			fmt.Println("  path: " + trackedDeployment.Spec.Source.Path)
