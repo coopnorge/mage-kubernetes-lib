@@ -26,3 +26,14 @@ func tempDir() (string, error) {
 	}
 	return dir, nil
 }
+
+func isKustomizeDir(dirPath string) bool {
+	if _, err := os.Stat(dirPath + "/kustomization.yaml"); err == nil {
+		return true
+	}
+	// Support legacy .yml extension
+	if _, err := os.Stat(dirPath + "/kustomization.yml"); err == nil {
+		return true
+	}
+	return false
+}
