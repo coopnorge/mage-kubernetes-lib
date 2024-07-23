@@ -107,6 +107,11 @@ func addHelmRepos(path string) error {
 		return err
 	}
 	for _, dep := range chart.Dependencies {
+		if strings.HasPrefix(dep.Repository, "oci://") {
+			fmt.Println("skipping repo add for oci repository: " + dep.Repository)
+			continue
+		}
+
 		err := sh.Run("helm", "repo", "add", dep.Name, dep.Repository)
 		if err != nil {
 			return err
