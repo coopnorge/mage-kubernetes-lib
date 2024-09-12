@@ -20,7 +20,7 @@ jobs:
       - id: xdg_cache_hash
         run: echo "xdg_cache_hash=${{hashFiles('./docker-compose.yml', './docker-compose/Dockerfile', './go.sum')}}" >> $GITHUB_OUTPUT
       - name: Cache xdg
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: xdg-${{ github.repository }}-${{ github.job }}-${{ steps.xdg_cache_hash.outputs.xdg_cache_hash }}
