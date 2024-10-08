@@ -83,7 +83,14 @@ func getArgoCDDiff(apps []ArgoCDApp) error {
 			"--local", app.Spec.Source.Path,
 		}
 		diff, err := sh.OutputWith(env, "argocd", append(cmdOptions, authOptions...)...)
-		if sh.ExitStatus(err) == 2 {
+
+		// `argocd diff` returns the following exit codes:
+		// 		- 2 on general errors,
+		//		- 1 when a diff is found, and
+		//		- 0 when no diff
+		// In addition, it also returns additional exit codes 11, 12, 13 and 20
+		errCode := sh.ExitStatus(err)
+		if errCode != 0 && errCode != 1 {
 			return err
 		}
 		fmt.Println("---- Diff of " + app.Metadata.Name + "  ----")
