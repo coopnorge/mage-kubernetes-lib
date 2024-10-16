@@ -18,6 +18,20 @@ services:
       # ${x:-y} explained here https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html#:~:text=3.5.3%20Shell%20Parameter%20Expansion
     environment:
       GOMODCACHE: /root/.cache/go-mod
+  kubernetes-devtools:
+    build:
+      context: docker-compose
+      target: kubernetes-devtools
+      dockerfile: Dockerfile
+    privileged: false
+    command: validate
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    volumes:
+      - .:/srv/workspace:z
+      - $HOME/.argocd:/root/.config/argocd
+
 volumes:
   xdg-cache-home: { }
   nothing: { }
