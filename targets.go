@@ -72,6 +72,10 @@ func ArgoCDDiff() error {
 	if err != nil {
 		return err
 	}
+	err = validateKyvernoPoliciesNew(apps)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
