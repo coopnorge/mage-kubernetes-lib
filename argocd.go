@@ -145,3 +145,49 @@ func listArgoCDDeployments() error {
 	}
 	return nil
 }
+
+func validateKyvernoPoliciesNew(policyDir string, apps []ArgoCDApp) error {
+
+	// Get a list of all policy files in the directory
+	policyFiles, err := os.ReadDir(policyDir)
+	if err != nil {
+		return fmt.Errorf("failed to read policy directory: %w", err)
+	}
+
+	// Iterate over all ArgoCD applications
+	for _, app := range apps {
+		resourcePath := app.Spec.Source.Path
+
+		// Validate the resources using each policy file
+		for _, policyFile := range policyFiles {
+			if !strings.HasSuffix(policyFile.Name(), ".yaml") {
+				continue
+			}
+
+			policyFilePath := fmt.Sprintf("%s/%s", policyDir, policyFile.Name())
+			cmdOptions := []string{
+				"apply", policyFilePath,
+				"--resource", resourcePath,
+				"--report",
+				"--output", "yaml",
+			}
+
+			// Execute the Kyverno CLI command for each policy file
+			output, err := sh.Output("kyverno", cmdOptions...)
+			if err != nil {
+				return fmt.Errorf("failed to validate policies for app '%s' with policy '%s': %w", app.Metadata.Name, policyFilePath, err)
+			}
+
+			// Print the Kyverno policy validation report for each policy and app
+			fmt.Println("---- Kyverno Policy Validation Report for app:", app.Metadata.Name, "with policy:", policyFilePath, " ----")
+			fmt.Println(output)
+
+			// Check if the output contains violations or failed policies
+			if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
+				return fmt.Errorf("kyverno validation failed for app '%s' with policy '%s': %s", app.Metadata.Name, policyFilePath, output)
+			}
+		}
+	}
+
+	return nil
+}
