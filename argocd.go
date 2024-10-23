@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/magefile/mage/sh"
 	"gopkg.in/yaml.v3"
 )
@@ -145,25 +146,31 @@ func listArgoCDDeployments() error {
 	return nil
 }
 
-func validateKyvernoPoliciesNew(policyDir string, apps []ArgoCDApp) error {
+func validateKyvernoPolicies(apps []ArgoCDApp) error {
 
-	// Get a list of all policy files in the directory
-	policyFiles, err := os.ReadDir(policyDir)
+	policyUrl := "https://github.com/coopnorge/kubernetes-base-manifests/"
+
+	// Download all policy files
+	err := downloadPolicyFiles(policyUrl)
 	if err != nil {
-		return fmt.Errorf("failed to read policy directory: %w", err)
+		return fmt.Errorf("failed to download policy files: %w", err)
 	}
 
-	// Iterate over all ArgoCD applications
 	for _, app := range apps {
 		resourcePath := app.Spec.Source.Path
 
-		// Validate the resources using each policy file
+		// Validate the resources using each downloaded policy file
+		policyFiles, err := os.ReadDir("policy-repo/kubernetes-base-manifests/manifests/kyverno-policies/templates")
+		if err != nil {
+			return fmt.Errorf("failed to read downloaded policies: %w", err)
+		}
+
 		for _, policyFile := range policyFiles {
 			if !strings.HasSuffix(policyFile.Name(), ".yaml") {
 				continue
 			}
 
-			policyFilePath := fmt.Sprintf("%s/%s", policyDir, policyFile.Name())
+			policyFilePath := fmt.Sprintf("downloaded-policies/%s", policyFile.Name())
 			cmdOptions := []string{
 				"apply", policyFilePath,
 				"--resource", resourcePath,
@@ -171,21 +178,38 @@ func validateKyvernoPoliciesNew(policyDir string, apps []ArgoCDApp) error {
 				"--output", "yaml",
 			}
 
-			// Execute the Kyverno CLI command for each policy file
 			output, err := sh.Output("kyverno", cmdOptions...)
 			if err != nil {
 				return fmt.Errorf("failed to validate policies for app '%s' with policy '%s': %w", app.Metadata.Name, policyFilePath, err)
 			}
 
-			// Print the Kyverno policy validation report for each policy and app
 			fmt.Println("---- Kyverno Policy Validation Report for app:", app.Metadata.Name, "with policy:", policyFilePath, " ----")
 			fmt.Println(output)
 
-			// Check if the output contains violations or failed policies
 			if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
 				return fmt.Errorf("kyverno validation failed for app '%s' with policy '%s': %s", app.Metadata.Name, policyFilePath, output)
 			}
 		}
+	}
+
+	return nil
+}
+
+// This function needs to be implemented to download policy files from the provided URL
+func downloadPolicyFiles(url string) error {
+
+	err := os.MkdirAll("policy-repo", os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Use go-git to clone the repository
+	_, err = git.PlainClone("policy-repo", false, &git.CloneOptions{
+		URL:      url,
+		Progress: os.Stdout,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to clone repository: %w", err)
 	}
 
 	return nil
