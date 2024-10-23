@@ -147,10 +147,10 @@ func listArgoCDDeployments() error {
 }
 
 func validateKyvernoPolicies(apps []ArgoCDApp) error {
-	policyUrl := "https://github.com/coopnorge/kubernetes-base-manifests/"
+	policyURL := "https://github.com/coopnorge/kubernetes-base-manifests/"
 
 	// Download all policy files
-	err := downloadPolicyFiles(policyUrl)
+	err := downloadPolicyFiles(policyURL)
 	if err != nil {
 		return fmt.Errorf("failed to download policy files: %w", err)
 	}
