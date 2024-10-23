@@ -36,6 +36,10 @@ func KubeConform() error {
 	if err != nil {
 		return err
 	}
+	err = validateKyvernoPolicies(apps)
+	if err != nil {
+		return err
+	}
 	return kubeConform(templates, "api-platform")
 }
 

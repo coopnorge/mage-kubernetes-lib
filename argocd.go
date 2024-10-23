@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/magefile/mage/sh"
 	"gopkg.in/yaml.v3"
 )
@@ -142,5 +143,72 @@ func listArgoCDDeployments() error {
 			fmt.Println("  path: " + trackedDeployment.Spec.Source.Path)
 		}
 	}
+	return nil
+}
+
+func validateKyvernoPolicies(apps []ArgoCDApp) error {
+	policyURL := "https://github.com/coopnorge/kubernetes-base-manifests/"
+
+	// Download all policy files
+	err := downloadPolicyFiles(policyURL)
+	if err != nil {
+		return fmt.Errorf("failed to download policy files: %w", err)
+	}
+
+	for _, app := range apps {
+		resourcePath := app.Spec.Source.Path
+
+		// Validate the resources using each downloaded policy file
+		policyFiles, err := os.ReadDir("policy-repo/kubernetes-base-manifests/manifests/kyverno-policies/templates")
+		if err != nil {
+			return fmt.Errorf("failed to read downloaded policies: %w", err)
+		}
+
+		for _, policyFile := range policyFiles {
+			if !strings.HasSuffix(policyFile.Name(), ".yaml") {
+				continue
+			}
+
+			policyFilePath := fmt.Sprintf("downloaded-policies/%s", policyFile.Name())
+			cmdOptions := []string{
+				"apply", policyFilePath,
+				"--resource", resourcePath,
+				"--report",
+				"--output", "yaml",
+			}
+
+			output, err := sh.Output("kyverno", cmdOptions...)
+			if err != nil {
+				return fmt.Errorf("failed to validate policies for app '%s' with policy '%s': %w", app.Metadata.Name, policyFilePath, err)
+			}
+
+			fmt.Println("---- Kyverno Policy Validation Report for app:", app.Metadata.Name, "with policy:", policyFilePath, " ----")
+			fmt.Println(output)
+
+			if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
+				return fmt.Errorf("kyverno validation failed for app '%s' with policy '%s': %s", app.Metadata.Name, policyFilePath, output)
+			}
+		}
+	}
+
+	return nil
+}
+
+// This function needs to be implemented to download policy files from the provided URL
+func downloadPolicyFiles(url string) error {
+	err := os.MkdirAll("policy-repo", os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Use go-git to clone the repository
+	_, err = git.PlainClone("policy-repo", false, &git.CloneOptions{
+		URL:      url,
+		Progress: os.Stdout,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to clone repository: %w", err)
+	}
+
 	return nil
 }
