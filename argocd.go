@@ -147,7 +147,6 @@ func listArgoCDDeployments() error {
 }
 
 func validateKyvernoPolicies(apps []ArgoCDApp) error {
-
 	policyUrl := "https://github.com/coopnorge/kubernetes-base-manifests/"
 
 	// Download all policy files
@@ -197,7 +196,6 @@ func validateKyvernoPolicies(apps []ArgoCDApp) error {
 
 // This function needs to be implemented to download policy files from the provided URL
 func downloadPolicyFiles(url string) error {
-
 	err := os.MkdirAll("policy-repo", os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
