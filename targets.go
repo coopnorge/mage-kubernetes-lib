@@ -36,6 +36,14 @@ func KubeConform() error {
 	if err != nil {
 		return err
 	}
+	repo, err := repoURL()
+	if err != nil {
+		return err
+	}
+	apps, err := getArgoCDDeployments(repo)
+	if err != nil {
+		return err
+	}
 	err = validateKyvernoPolicies(apps)
 	if err != nil {
 		return err
