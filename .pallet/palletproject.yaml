@@ -1,0 +1,10 @@
+---
+apiVersion: gcp.coop.no/v1alpha1
+kind: PalletProject
+metadata:
+  name: palletproject
+spec:
+  project:
+    budget:
+      notificationEmailAddresses:
+        - cloud-platformt@o365.coop.no
