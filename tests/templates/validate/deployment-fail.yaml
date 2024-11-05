@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-app
+  labels:
+    app: insecure-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure-app
+  template:
+    metadata:
+      labels:
+        app: insecure-app
+    spec:
+      containers:
+        - name: insecure-container
+          image: nginx:latest   # Violates "no latest tag" policy
+          securityContext:
+            privileged: true     # Violates "no privileged containers" policy
+            runAsNonRoot: false  # Violates "must run as non-root" policy
+            readOnlyRootFilesystem: false  # Violates "read-only root filesystem" policy
+          resources:
+            requests:
+              memory: "0"        # Violates "resource requests and limits required" policy
+              cpu: "0"           # Violates "resource requests and limits required" policy
+            limits:
+              memory: "0"
+              cpu: "0"

@@ -36,18 +36,6 @@ func KubeConform() error {
 	if err != nil {
 		return err
 	}
-	repo, err := repoURL()
-	if err != nil {
-		return err
-	}
-	apps, err := getArgoCDDeployments(repo)
-	if err != nil {
-		return err
-	}
-	err = validateKyvernoPolicies(apps)
-	if err != nil {
-		return err
-	}
 	return kubeConform(templates, "api-platform")
 }
 
@@ -81,6 +69,32 @@ func ArgoCDDiff() error {
 		return err
 	}
 	err = getArgoCDDiff(apps)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateKyverno validates the baseline kyverno policies for local changes.
+func ValidateKyverno(customRepoURL string) error {
+	var repo string
+	var err error
+
+	if len(customRepoURL) > 0 {
+		repo = customRepoURL
+	} else {
+		repo, err = repoURL()
+		if err != nil {
+			return err
+		}
+	}
+
+	apps, err := getArgoCDDeployments(repo)
+	if err != nil {
+		return err
+	}
+
+	err = validateKyvernoPolicies(apps)
 	if err != nil {
 		return err
 	}
