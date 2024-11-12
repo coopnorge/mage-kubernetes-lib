@@ -107,7 +107,7 @@ func validateKyvernoPolicies(renderedTemplatePaths string) error {
 			cmdOptions := []string{
 				"apply", policyFilePath,
 				"--resource", templatePath,
-				"--report",
+				"--policy-report",
 				"--output", "yaml",
 			}
 
