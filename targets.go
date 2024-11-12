@@ -2,6 +2,7 @@ package magekubernetes
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
@@ -75,31 +76,73 @@ func ArgoCDDiff() error {
 	return nil
 }
 
-// ValidateKyverno validates the baseline kyverno policies for local changes.
-// func ValidateKyverno(customRepoURL string) error {
-// 	var repo string
-// 	var err error
+// validateKyvernoPolicies runs Kyverno validation on rendered Kubernetes manifests.
+func validateKyvernoPolicies(renderedTemplatePaths string) error {
+	policyDir := "kyverno-policies" // Directory where policies are stored
 
-// 	if len(customRepoURL) > 0 {
-// 		repo = customRepoURL
-// 	} else {
-// 		repo, err = repoURL()
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
+	templateFiles, err := os.ReadDir(renderedTemplatePaths)
+	if err != nil {
+		return fmt.Errorf("failed to read rendered templates: %w", err)
+	}
+	for _, templateFile := range templateFiles {
+		// Skip if it’s a directory
 
-// 	apps, err := getArgoCDDeployments(repo)
-// 	if err != nil {
-// 		return err
-// 	}
+		if templateFile.IsDir() {
+			continue
+		}
+		// Construct the full path for the current template file
+		templatePath := fmt.Sprintf("%s/%s", renderedTemplatePaths, templateFile.Name())
 
-// 	err = validateKyvernoPolicies(apps)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+		policyFiles, err := os.ReadDir(policyDir)
+		if err != nil {
+			return fmt.Errorf("failed to read Kyverno policies: %w", err)
+		}
+
+		for _, policyFile := range policyFiles {
+			if !strings.HasSuffix(policyFile.Name(), ".yaml") {
+				continue
+			}
+
+			policyFilePath := fmt.Sprintf("%s/%s", policyDir, policyFile.Name())
+			cmdOptions := []string{
+				"apply", policyFilePath,
+				"--resource", templatePath,
+				"--report",
+				"--output", "yaml",
+			}
+
+			output, err := sh.Output("kyverno", cmdOptions...)
+			if err != nil {
+				return fmt.Errorf("Kyverno validation failed for template '%s' with policy '%s': %w", templatePath, policyFilePath, err)
+			}
+
+			fmt.Printf("Kyverno validation for template '%s' with policy '%s' completed.\n", templatePath, policyFilePath)
+
+			if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
+				return fmt.Errorf("Kyverno validation issues found in template '%s' with policy '%s': %s", templatePath, policyFilePath, output)
+			}
+		}
+	}
+	return nil
+}
+
+// ValidateKyverno runs render Kubernetes manifests and invokes validateKyvernoPolicies.
+func ValidateKyverno() error {
+	// Render templates and obtain paths
+	renderedTemplates, err := renderTemplates()
+	if err != nil {
+		return fmt.Errorf("failed to render templates: %w", err)
+	}
+
+	// Validate rendered templates with Kyverno
+	err = validateKyvernoPolicies(renderedTemplates)
+	if err != nil {
+		return fmt.Errorf("Kyverno validation failed: %w", err)
+	}
+
+	fmt.Println("All templates passed Kyverno validation.")
+	return nil
+}
 
 func kubeScore(paths string) error {
 	if paths == "" {
