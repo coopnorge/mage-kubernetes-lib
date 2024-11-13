@@ -20,7 +20,8 @@ spec:
           securityContext:
             capabilities:       # Violates "disallow capabilities" policy
               add:
-              - NET_RAW
+              - SETGID
+              - SYS_ADMIN
             privileged: true     # Violates "no privileged containers" policy
             runAsNonRoot: false  # Violates "must run as non-root" policy
             readOnlyRootFilesystem: false  # Violates "read-only root filesystem" policy
