@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-app
+  labels:
+    app: secure-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-app
+  template:
+    metadata:
+      labels:
+        app: secure-app
+    spec:
+      containers:
+        - name: secure-container
+          image: nginx:1.21.6           # Uses a specific tag instead of 'latest'
+          securityContext:
+            runAsNonRoot: true           # Enforces running as a non-root user
+            allowPrivilegeEscalation: false # Prevents privilege escalation
+            readOnlyRootFilesystem: true  # Enforces read-only root filesystem
+          resources:
+            requests:                     # Defines minimum resource requests
+              memory: "64Mi"
+              cpu: "250m"
+            limits:                       # Defines maximum resource limits
+              memory: "128Mi"
+              cpu: "500m"
