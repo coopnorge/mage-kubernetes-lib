@@ -38,13 +38,13 @@ func TestOKKubeConform(t *testing.T) {
 }
 
 // Test for manifest files expected to fail Kyverno policy validation
-// func TestFailedValidateKyverno(t *testing.T) {
-// 	path := "tests/templates/validate-fail/"
-// 	err := validateKyvernoPolicies(path)
-// 	if err == nil {
-// 		t.Fatalf("Expected validation to fail for manifest %s, but it passed", path)
-// 	}
-// }
+func TestFailedValidateKyverno(t *testing.T) {
+	path := "tests/templates/validate-fail/"
+	err := validateKyvernoPolicies(path)
+	if err == nil {
+		t.Fatalf("Expected validation to fail for manifest %s, but it passed", path)
+	}
+}
 
 // Test for manifest files expected to pass Kyverno policy validation
 func TestOKValidateKyverno(t *testing.T) {
