@@ -17,6 +17,7 @@ func Validate() error {
 	}
 	mg.Deps(mg.F(kubeScore, templates))
 	mg.Deps(mg.F(kubeConform, templates, "api-platform"))
+	mg.Deps(mg.F(validateKyvernoPolicies, templates))
 	mg.Deps(Pallets)
 	fmt.Println("Validation passed")
 	return nil
@@ -76,6 +77,24 @@ func ArgoCDDiff() error {
 	return nil
 }
 
+// ValidateKyverno runs render Kubernetes manifests and invokes validateKyvernoPolicies.
+func ValidateKyverno() error {
+	// Render templates and obtain paths
+	renderedTemplates, err := renderTemplates()
+	if err != nil {
+		return fmt.Errorf("failed to render templates: %w", err)
+	}
+
+	// Validate rendered templates with Kyverno
+	err = validateKyvernoPolicies(renderedTemplates)
+	if err != nil {
+		return fmt.Errorf("Kyverno validation failed: %w", err)
+	}
+
+	fmt.Println("All templates passed Kyverno validation.")
+	return nil
+}
+
 // validateKyvernoPolicies runs Kyverno validation on rendered Kubernetes manifests.
 func validateKyvernoPolicies(renderedTemplatePaths string) error {
 	policyDir := "kyverno-policies" // Directory where policies are stored
@@ -123,24 +142,6 @@ func validateKyvernoPolicies(renderedTemplatePaths string) error {
 			}
 		}
 	}
-	return nil
-}
-
-// ValidateKyverno runs render Kubernetes manifests and invokes validateKyvernoPolicies.
-func ValidateKyverno() error {
-	// Render templates and obtain paths
-	renderedTemplates, err := renderTemplates()
-	if err != nil {
-		return fmt.Errorf("failed to render templates: %w", err)
-	}
-
-	// Validate rendered templates with Kyverno
-	err = validateKyvernoPolicies(renderedTemplates)
-	if err != nil {
-		return fmt.Errorf("Kyverno validation failed: %w", err)
-	}
-
-	fmt.Println("All templates passed Kyverno validation.")
 	return nil
 }
 
