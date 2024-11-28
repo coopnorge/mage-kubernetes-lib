@@ -80,13 +80,13 @@ func ArgoCDDiff() error {
 // ValidateKyverno runs render Kubernetes manifests and invokes validateKyvernoPolicies.
 func ValidateKyverno() error {
 	// Render templates and obtain paths
-	renderedTemplates, err := renderTemplates()
+	paths, err := renderTemplates()
 	if err != nil {
 		return fmt.Errorf("failed to render templates: %w", err)
 	}
 
 	// Validate rendered templates with Kyverno
-	err = validateKyvernoPolicies(renderedTemplates)
+	err = validateKyvernoPolicies(paths)
 	if err != nil {
 		return fmt.Errorf("Kyverno validation failed: %w", err)
 	}
@@ -96,52 +96,56 @@ func ValidateKyverno() error {
 }
 
 // validateKyvernoPolicies runs Kyverno validation on rendered Kubernetes manifests.
-func validateKyvernoPolicies(renderedTemplatePaths string) error {
-	policyDir := "kyverno-policies" // Directory where policies are stored
-
-	templateFiles, err := os.ReadDir(renderedTemplatePaths)
-	if err != nil {
-		return fmt.Errorf("failed to read rendered templates: %w", err)
+func validateKyvernoPolicies(paths string) error {
+	if paths == "" {
+		fmt.Println("No rendered templates provided for validation, skipping.")
+		return nil
 	}
-	for _, templateFile := range templateFiles {
-		// Skip if it’s a directory
 
-		if templateFile.IsDir() {
+	policyDir := "kyverno-policies"            // Directory where policies are stored
+	templatePaths := strings.Split(paths, ",") // Split the input paths into a list
+
+	// Prepare resource arguments for the Kyverno CLI
+	resourceArgs := []string{}
+	for _, templatePath := range templatePaths {
+		templatePath = strings.TrimSpace(templatePath)
+		if templatePath == "" {
 			continue
 		}
-		// Construct the full path for the current template file
-		templatePath := fmt.Sprintf("%s/%s", renderedTemplatePaths, templateFile.Name())
+		resourceArgs = append(resourceArgs, "-r", templatePath)
+	}
 
-		policyFiles, err := os.ReadDir(policyDir)
-		if err != nil {
-			return fmt.Errorf("failed to read Kyverno policies: %w", err)
+	if len(resourceArgs) == 0 {
+		fmt.Println("No valid rendered templates found for validation.")
+		return nil
+	}
+
+	// Iterate over all policies and apply them
+	policyFiles, err := os.ReadDir(policyDir)
+	if err != nil {
+		return fmt.Errorf("failed to read Kyverno policies: %w", err)
+	}
+
+	for _, policyFile := range policyFiles {
+		if !strings.HasSuffix(policyFile.Name(), ".yaml") {
+			continue
 		}
 
-		for _, policyFile := range policyFiles {
-			if !strings.HasSuffix(policyFile.Name(), ".yaml") {
-				continue
-			}
+		policyFilePath := fmt.Sprintf("%s/%s", policyDir, policyFile.Name())
+		cmdOptions := append([]string{"apply", policyFilePath, "--policy-report", "--output", "yaml"}, resourceArgs...)
 
-			policyFilePath := fmt.Sprintf("%s/%s", policyDir, policyFile.Name())
-			cmdOptions := []string{
-				"apply", policyFilePath,
-				"--resource", templatePath,
-				"--policy-report",
-				"--output", "yaml",
-			}
+		output, err := sh.Output("kyverno", cmdOptions...)
+		if err != nil {
+			return fmt.Errorf("Kyverno validation failed for policy '%s': %w", policyFilePath, err)
+		}
 
-			output, err := sh.Output("kyverno", cmdOptions...)
-			if err != nil {
-				return fmt.Errorf("Kyverno validation failed for template '%s' with policy '%s': %w", templatePath, policyFilePath, err)
-			}
+		fmt.Printf("Kyverno validation with policy '%s' completed.\n", policyFilePath)
 
-			fmt.Printf("Kyverno validation for template '%s' with policy '%s' completed.\n", templatePath, policyFilePath)
-
-			if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
-				return fmt.Errorf("Kyverno validation issues found in template '%s' with policy '%s': %s", templatePath, policyFilePath, output)
-			}
+		if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
+			return fmt.Errorf("Kyverno validation issues found with policy '%s': %s", policyFilePath, output)
 		}
 	}
+
 	return nil
 }
 
