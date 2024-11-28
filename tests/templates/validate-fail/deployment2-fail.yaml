@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: noncompliant-app
+  labels:
+    app: noncompliant-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: noncompliant-app
+  template:
+    metadata:
+      labels:
+        app: noncompliant-app
+    spec:
+      containers:
+        - name: noncompliant-container
+          image: mysql:latest          # Violates "no latest tag" policy
+          securityContext:
+            capabilities:              # Violates "disallow capabilities" policy
+              add:
+              - NET_ADMIN
+              - SYS_MODULE
+            privileged: true            # Violates "no privileged containers" policy
+            runAsNonRoot: false         # Violates "must run as non-root" policy
+            readOnlyRootFilesystem: false # Violates "read-only root filesystem" policy
+          resources:
+            requests:                   # Violates "resource requests and limits required" policy
+              memory: "0"
+              cpu: "0"
+            limits:
+              memory: "0"
+              cpu: "0"
+          ports:
+            - containerPort: 3306       # Exposes a port without proper context
