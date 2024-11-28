@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliance-app
+  labels:
+    app: compliance-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compliance-app
+  template:
+    metadata:
+      labels:
+        app: compliance-app
+    spec:
+      containers:
+        - name: compliance-container
+          image: bitnami/redis:7.0.10            # Uses a specific, secure image version
+          securityContext:
+            runAsNonRoot: true                  # Enforces running as a non-root user
+            runAsUser: 1001                     # Specifies a non-root user ID
+            allowPrivilegeEscalation: false     # Prevents privilege escalation
+            capabilities:                       # Drops unnecessary capabilities
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true        # Makes the root filesystem immutable
+          resources:
+            requests:                           # Defines minimum resource requests
+              memory: "64Mi"
+              cpu: "250m"
+            limits:                             # Defines maximum resource limits
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 6379               # Specifies the Redis port exposed by the container

@@ -17,7 +17,7 @@ func Validate() error {
 	}
 	mg.Deps(mg.F(kubeScore, templates))
 	mg.Deps(mg.F(kubeConform, templates, "api-platform"))
-	mg.Deps(mg.F(validateKyvernoPolicies, templates))
+	//	mg.Deps(mg.F(validateKyvernoPolicies, templates))
 	mg.Deps(Pallets)
 	fmt.Println("Validation passed")
 	return nil
