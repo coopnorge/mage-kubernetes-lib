@@ -2,7 +2,6 @@ package magekubernetes
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
@@ -121,30 +120,24 @@ func validateKyvernoPolicies(paths string) error {
 	}
 
 	// Iterate over all policies and apply them
-	policyFiles, err := os.ReadDir(policyDir)
-	if err != nil {
-		return fmt.Errorf("failed to read Kyverno policies: %w", err)
-	}
+	// policyFiles, err := os.ReadDir(policyDir)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to read Kyverno policies: %w", err)
+	// }
 
-	for _, policyFile := range policyFiles {
-		if !strings.HasSuffix(policyFile.Name(), ".yaml") {
-			continue
-		}
-
-		policyFilePath := fmt.Sprintf("%s/%s", policyDir, policyFile.Name())
-		cmdOptions := append([]string{"apply", policyFilePath, "--policy-report", "--output", "yaml"}, resourceArgs...)
+    cmdOptions := append([]string{"apply", policyDir, "-t","--detailed-results"}, resourceArgs...)
 
 		output, err := sh.Output("kyverno", cmdOptions...)
 		if err != nil {
-			return fmt.Errorf("Kyverno validation failed for policy '%s': %w", policyFilePath, err)
+			fmt.Println(output)
+			return fmt.Errorf("Kyverno validation failed for policy %w", err)
 		}
 
-		fmt.Printf("Kyverno validation with policy '%s' completed.\n", policyFilePath)
+		fmt.Printf("Kyverno validation completed.\n")
 
 		if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
-			return fmt.Errorf("Kyverno validation issues found with policy '%s': %s", policyFilePath, output)
+			return fmt.Errorf("Kyverno validation issues found with policy: %s", output)
 		}
-	}
 
 	return nil
 }
