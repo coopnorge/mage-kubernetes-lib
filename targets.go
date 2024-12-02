@@ -125,19 +125,19 @@ func validateKyvernoPolicies(paths string) error {
 	// 	return fmt.Errorf("failed to read Kyverno policies: %w", err)
 	// }
 
-    cmdOptions := append([]string{"apply", policyDir, "-t","--detailed-results"}, resourceArgs...)
+	cmdOptions := append([]string{"apply", policyDir, "-t", "--detailed-results", "--continue-on-fail"}, resourceArgs...)
 
-		output, err := sh.Output("kyverno", cmdOptions...)
-		if err != nil {
-			fmt.Println(output)
-			return fmt.Errorf("Kyverno validation failed for policy %w", err)
-		}
+	output, err := sh.Output("kyverno", cmdOptions...)
+	if err != nil {
+		fmt.Println(output)
+		return fmt.Errorf("Kyverno validation failed for policy %w", err)
+	}
 
-		fmt.Printf("Kyverno validation completed.\n")
+	fmt.Printf("Kyverno validation completed.\n")
 
-		if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
-			return fmt.Errorf("Kyverno validation issues found with policy: %s", output)
-		}
+	if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
+		return fmt.Errorf("Kyverno validation issues found with policy: %s", output)
+	}
 
 	return nil
 }
