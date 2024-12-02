@@ -119,8 +119,6 @@ func validateKyvernoPolicies(paths string) error {
 		return nil
 	}
 
-	// Iterate over all policies and apply them
-
 	cmdOptions := append([]string{"apply", policyDir, "-t", "--detailed-results", "--continue-on-fail"}, resourceArgs...)
 
 	output, err := sh.Output("kyverno", cmdOptions...)
