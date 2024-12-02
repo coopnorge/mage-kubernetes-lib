@@ -120,10 +120,6 @@ func validateKyvernoPolicies(paths string) error {
 	}
 
 	// Iterate over all policies and apply them
-	// policyFiles, err := os.ReadDir(policyDir)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to read Kyverno policies: %w", err)
-	// }
 
 	cmdOptions := append([]string{"apply", policyDir, "-t", "--detailed-results", "--continue-on-fail"}, resourceArgs...)
 
