@@ -41,7 +41,6 @@ func TestOKKubeConform(t *testing.T) {
 func TestFailedValidateKyverno(t *testing.T) {
 	path := "tests/templates/validate-fail/deployment-fail.yaml,tests/templates/validate-fail/deployment-fail.yaml,"
 	err := validateKyvernoPolicies(path)
-	//fmt.Println(err)
 	if err == nil {
 		t.Fatalf("Expected validation to fail for manifest %s, but it passed", path)
 	}
