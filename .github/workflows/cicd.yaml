@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@4574d27a4764455b42196d70a065bc6853246a25 # pin@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # pin@v3
       - id: xdg_cache_hash
         run: echo "xdg_cache_hash=${{hashFiles('./docker-compose.yml', './docker-compose/Dockerfile', './go.sum')}}" >> $GITHUB_OUTPUT
       - name: Cache xdg
@@ -28,7 +28,7 @@ jobs:
             xdg-${{ github.repository }}-${{ github.job }}-${{ steps.xdg_cache_hash.outputs.xdg_cache_hash }}
             xdg-${{ github.repository }}-${{ github.job }}-
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # pin@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
