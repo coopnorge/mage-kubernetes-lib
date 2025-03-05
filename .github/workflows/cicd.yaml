@@ -1,4 +1,3 @@
----
 on:
   pull_request: {}
   push:
@@ -7,7 +6,7 @@ on:
 jobs:
   go-ci:
     name: Go CI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       docker-compose-service: golang-devtools
       XDG_CACHE_HOME: ${{ github.workspace }}/.cache/xdg
