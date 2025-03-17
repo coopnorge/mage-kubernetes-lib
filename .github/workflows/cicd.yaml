@@ -28,7 +28,7 @@ jobs:
             xdg-${{ github.repository }}-${{ github.job }}-${{ steps.xdg_cache_hash.outputs.xdg_cache_hash }}
             xdg-${{ github.repository }}-${{ github.job }}-
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # pin@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # pin@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
