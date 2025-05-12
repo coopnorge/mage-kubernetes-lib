@@ -44,6 +44,7 @@ func renderHelm(source ArgoCDAppSource) (string, error) {
 		return "", err
 	}
 	err = sh.Run("helm", "template",
+		"--skip-tests",
 		"-f", strings.Join(source.Helm.ValueFiles, ","),
 		"--output-dir", dir,
 		".")
