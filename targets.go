@@ -87,7 +87,7 @@ func ValidateKyverno() error {
 	// Validate rendered templates with Kyverno
 	err = validateKyvernoPolicies(paths)
 	if err != nil {
-		return fmt.Errorf("Kyverno validation failed: %w", err)
+		return fmt.Errorf("kyverno validation failed: %w", err)
 	}
 
 	fmt.Println("All templates passed Kyverno validation.")
@@ -124,13 +124,13 @@ func validateKyvernoPolicies(paths string) error {
 	output, err := sh.Output("kyverno", cmdOptions...)
 	if err != nil {
 		fmt.Println(output)
-		return fmt.Errorf("Kyverno validation failed for policy %w", err)
+		return fmt.Errorf("kyverno validation failed for policy %w", err)
 	}
 
 	fmt.Printf("Kyverno validation completed.\n")
 
 	if strings.Contains(output, "violation") || strings.Contains(output, "failed") {
-		return fmt.Errorf("Kyverno validation issues found with policy: %s", output)
+		return fmt.Errorf("kyverno validation issues found with policy: %s", output)
 	}
 
 	return nil
