@@ -104,7 +104,7 @@ func getArgoCDAuth() ([]string, error) {
 	if token, ok := os.LookupEnv("ARGOCD_API_TOKEN"); ok {
 		server, ok := os.LookupEnv("ARGOCD_SERVER")
 		if !ok {
-			return nil, fmt.Errorf("When using ARGOCD_API_TOKEN, you are also required to set ARGOCD_SERVER")
+			return nil, fmt.Errorf("when using ARGOCD_API_TOKEN, you are also required to set ARGOCD_SERVER")
 		}
 		authOptions = append(authOptions, "--auth-token", token, "--server", server)
 	} else {
