@@ -80,6 +80,7 @@ func getArgoCDDiff(apps []ArgoCDApp) error {
 			"diff",
 			app.Metadata.Name,
 			"--refresh",
+			"--local-repo-root", ".",
 			"--local", app.Spec.Source.Path,
 		}
 		diff, err := sh.OutputWith(env, "argocd", append(cmdOptions, authOptions...)...)
