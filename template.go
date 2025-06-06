@@ -30,7 +30,12 @@ func renderHelm(source ArgoCDAppSource) (string, error) {
 	}
 	err = os.Chdir(source.Path)
 	if err != nil {
-		return "", err
+		// dont error here, it seems we cannot
+		// find the directory so we dont render templates
+		// cause could be wrong configuration of the argocd app
+		// or the new config is not yet on the main branch
+		fmt.Printf("Directory %s not found. Skipping rendering manifests.\n", source.Path)
+		return "", nil
 	}
 	// temporary fix  until https://github.com/helm/helm/issues/7214 is fixed
 	// again
