@@ -5,8 +5,32 @@ on:
     branches:
       - main
 jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      run-golang-ci: ${{ steps.changes.outputs.golang == 'true' }}
+      run-pallet-ci: ${{ steps.changes.outputs.pallet == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: xdg_cache_hash
+        run: echo "xdg_cache_hash=${{hashFiles('./docker-compose.yml', './docker-compose/Dockerfile', './**/go.sum')}}" >> $GITHUB_OUTPUT
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          list-files: json
+          filters: |
+            golang:
+              - '!.pallet/*'
+            pallet:
+              - '.pallet/*'
+      - name: Debug ...
+        run: |
+          echo "::${{ steps.changes.outputs }}"
   go-ci:
     name: Go CI
+    needs: ["setup"]
+    if: ${{ needs.setup.outputs.run-golang-ci == 'true' }}
     runs-on: ubuntu-latest
     env:
       docker-compose-service: golang-devtools
@@ -39,3 +63,17 @@ jobs:
         run: docker compose build
       - name: Validate
         run: docker compose run --rm ${{ env.docker-compose-service }} validate VERBOSE=all
+
+  pallet-ci:
+    name: Pallet CI
+    if: ${{ needs.setup.outputs.run-pallet-ci == 'true' }}
+    concurrency:
+      group: ${{ github.repository }}-${{ github.workflow }}-pallet-ci-${{ github.ref }}
+      cancel-in-progress: true
+    needs: ["setup"]
+    uses: coopnorge/github-workflow-kubernetes-validation/.github/workflows/kubernetes-validation.yaml@b86a86083971ff4a1b3fa0ed4c1f7873ba20297b
+    with:
+      do-argocd-diff: false
+      validate-target: pallets
+    secrets:
+      argocd-api-token: ${{ secrets.ARGOCD_API_TOKEN }}
