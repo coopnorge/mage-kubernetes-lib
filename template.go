@@ -11,11 +11,15 @@ import (
 )
 
 func renderTemplate(app ArgoCDApp) (string, error) {
+	fmt.Printf("Preparing to render template for app: %s\n", app.Metadata.Name)
 	if app.Spec.Source.Helm.ReleaseName != "" {
+		fmt.Printf("Rendering helm release %s\n", app.Spec.Source.Helm.ReleaseName)
 		return renderHelm(app.Spec.Source)
 	} else if isKustomizeDir(app.Spec.Source.Path) {
+		fmt.Printf("Rendering kustomize %s\n", app.Spec.Source.Path)
 		return renderKustomize(app.Spec.Source.Path)
 	}
+	fmt.Printf("Rendering template %s\n", app.Spec.Source.Path)
 	return app.Spec.Source.Path, nil
 }
 
@@ -81,21 +85,23 @@ func renderKustomize(path string) (string, error) {
 func renderTemplates() (string, error) {
 	var files []string
 	repo, err := repoURL()
+	fmt.Println("rendering templates for repo: " + repo)
 	if err != nil {
 		return "", err
 	}
 	apps, err := getArgoCDDeployments(repo)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("getting ArgoCD deployments failed: %w", err)
 	}
 	for _, trackedDeployment := range apps {
 		templates, err := renderTemplate(trackedDeployment)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("rendering templates failed for %s: %w", trackedDeployment, err)
 		}
+		fmt.Println("listing files in templates directory: " + templates)
 		tackedFiles, err := listFilesInDirectory(templates)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("listing files failed for %s: %w", trackedDeployment, err)
 		}
 		files = append(files, tackedFiles...)
 	}
@@ -117,6 +123,8 @@ func addHelmRepos(path string) error {
 			fmt.Println("skipping repo add for oci repository: " + dep.Repository)
 			continue
 		}
+
+		fmt.Println("adding repo: " + dep.Repository)
 
 		err := sh.Run("helm", "repo", "add", dep.Name, dep.Repository)
 		if err != nil {
