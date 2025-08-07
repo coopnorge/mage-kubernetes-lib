@@ -2,6 +2,8 @@ package magekubernetes
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
@@ -14,7 +16,17 @@ func Validate() error {
 	if err != nil {
 		return err
 	}
-	mg.Deps(mg.F(kubeScore, templates))
+
+	skipKubeScore, err := strconv.ParseBool(os.Getenv("SKIP_KUBE_SCORE"))
+	if err != nil {
+		return err
+	}
+
+	if !skipKubeScore {
+		mg.Deps(mg.F(kubeScore, templates))
+	} else {
+		fmt.Println("Skipping kube-score")
+	}
 	mg.Deps(mg.F(kubeConform, templates, "api-platform"))
 	mg.Deps(mg.F(validateKyvernoPolicies, templates))
 	mg.Deps(Pallets)
