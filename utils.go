@@ -3,6 +3,7 @@ package magekubernetes
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 func listFilesInDirectory(path string) ([]string, error) {
@@ -36,4 +37,16 @@ func isKustomizeDir(dirPath string) bool {
 		return true
 	}
 	return false
+}
+
+func getBoolEnv(key string, defaultValue bool) (bool, error) {
+	v := os.Getenv(key)
+	if v == "" {
+		return defaultValue, nil
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return defaultValue, err
+	}
+	return b, nil
 }

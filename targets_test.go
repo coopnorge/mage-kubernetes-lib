@@ -1,6 +1,7 @@
 package magekubernetes
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -52,5 +53,40 @@ func TestOKValidateKyverno(t *testing.T) {
 	err := validateKyvernoPolicies(path)
 	if err != nil {
 		t.Fatalf("Expected validation to pass for manifest %s, but it failed with error: %v", path, err)
+	}
+}
+
+// Test for getBoolEnv returning expected values
+func TestGetBoolEnv(t *testing.T) {
+	os.Setenv("TEST_BOOL_1", "1")
+	os.Setenv("TEST_BOOL_0", "0")
+	os.Setenv("TEST_BOOL_TRUE", "true")
+	os.Setenv("TEST_BOOL_FALSE", "false")
+	os.Unsetenv("TEST_BOOL_UNSET")
+	os.Setenv("TEST_BOOL_INVALID", "not_a_bool")
+
+	tests := []struct {
+		key      string
+		def      bool
+		expected bool
+		wantErr  bool
+	}{
+		{"TEST_BOOL_1", false, true, false},
+		{"TEST_BOOL_0", false, false, false},
+		{"TEST_BOOL_TRUE", false, true, false},
+		{"TEST_BOOL_FALSE", true, false, false},
+		{"TEST_BOOL_UNSET", true, true, false},
+		{"TEST_BOOL_UNSET", false, false, false},
+		{"TEST_BOOL_INVALID", false, false, true},
+	}
+
+	for _, tt := range tests {
+		got, err := getBoolEnv(tt.key, tt.def)
+		if (err != nil) != tt.wantErr {
+			t.Fatalf("Expected error=%v for key %s, got %v", tt.wantErr, tt.key, err)
+		}
+		if got != tt.expected {
+			t.Fatalf("Expected %v for key %s, got %v", tt.expected, tt.key, got)
+		}
 	}
 }
