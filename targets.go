@@ -2,8 +2,6 @@ package magekubernetes
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
@@ -17,7 +15,7 @@ func Validate() error {
 		return err
 	}
 
-	skipKubeScore, err := strconv.ParseBool(os.Getenv("SKIP_KUBE_SCORE"))
+	skipKubeScore, err := getBoolEnv("SKIP_KUBE_SCORE", false)
 	if err != nil {
 		return err
 	}
