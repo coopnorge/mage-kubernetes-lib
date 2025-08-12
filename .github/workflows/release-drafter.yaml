@@ -2,13 +2,13 @@ name: Release Drafter
 on:
   push:
     branches:
-      - main
+    - main
   pull_request:
     types:
-      - opened
-      - reopened
-      - synchronize
-      - edited
+    - opened
+    - reopened
+    - synchronize
+    - edited
 permissions:
   contents: read
 
@@ -17,4 +17,5 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+      issues: write
     uses: coopnorge/github-workflow-release-drafter/.github/workflows/release-drafter-go.yaml@v0.8.0
