@@ -99,6 +99,10 @@ func renderTemplates() (string, error) {
 			return "", fmt.Errorf("rendering templates failed for %s: %w", trackedDeployment, err)
 		}
 		fmt.Println("listing files in templates directory: " + templates)
+		if templates == "" {
+			fmt.Println("templates is empty. Skipping listing files.")
+			continue
+		}
 		tackedFiles, err := listFilesInDirectory(templates)
 		if err != nil {
 			return "", fmt.Errorf("listing files failed for %s: %w", trackedDeployment, err)
