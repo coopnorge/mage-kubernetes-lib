@@ -12,8 +12,8 @@ import (
 
 func renderTemplate(app ArgoCDApp) (string, error) {
 	fmt.Printf("Preparing to render template for app: %s\n", app.Metadata.Name)
-	if app.Spec.Source.Helm.ReleaseName != "" {
-		fmt.Printf("Rendering helm release %s\n", app.Spec.Source.Helm.ReleaseName)
+	if app.Status.SourceType == "Helm" {
+		fmt.Printf("Rendering helm %s\n", app.Spec.Source.Path)
 		return renderHelm(app.Spec.Source)
 	} else if isKustomizeDir(app.Spec.Source.Path) {
 		fmt.Printf("Rendering kustomize %s\n", app.Spec.Source.Path)
