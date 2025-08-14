@@ -28,6 +28,12 @@ type ArgoCDAppSpec struct {
 	Sources []ArgoCDAppSource `yaml:"sources"`
 }
 
+// ArgoCDAppStatus contains metadata about the application
+// we are interested in the SourceType
+type ArgoCDAppStatus struct {
+	SourceType string `yaml:"sourceType"`
+}
+
 // ArgoCDAppMetadata contains the app name
 type ArgoCDAppMetadata struct {
 	Name string `yaml:"name"`
@@ -37,6 +43,7 @@ type ArgoCDAppMetadata struct {
 type ArgoCDApp struct {
 	Spec     ArgoCDAppSpec     `yaml:"spec"`
 	Metadata ArgoCDAppMetadata `yaml:"metadata"`
+	Status   ArgoCDAppStatus   `yaml:"status"`
 }
 
 func getArgoCDDeployments(repoURL string) ([]ArgoCDApp, error) {
