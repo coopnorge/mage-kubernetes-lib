@@ -2,6 +2,7 @@ package magekubernetes
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 )
@@ -49,4 +50,11 @@ func getBoolEnv(key string, defaultValue bool) (bool, error) {
 		return defaultValue, err
 	}
 	return b, nil
+}
+
+func runInDir(dir, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	return cmd.Run()
 }

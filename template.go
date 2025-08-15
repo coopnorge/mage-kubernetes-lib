@@ -33,42 +33,41 @@ func renderHelm(source ArgoCDAppSource) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pwd, err := os.Getwd()
+
+	chartDir, err := filepath.Abs(source.Path)
 	if err != nil {
 		return "", err
 	}
-	err = os.Chdir(source.Path)
-	if err != nil {
+	if _, err := os.Stat(chartDir); os.IsNotExist(err) {
 		// dont error here, it seems we cannot
 		// find the directory so we dont render templates
 		// cause could be wrong configuration of the argocd app
 		// or the new config is not yet on the main branch
-		fmt.Printf("Directory %s not found. Skipping rendering manifests.\n", source.Path)
+		fmt.Printf("Directory %s not found. Skipping rendering manifests.\n", chartDir)
 		return "", nil
 	}
+
 	// temporary fix  until https://github.com/helm/helm/issues/7214 is fixed
 	// again
-	err = addHelmRepos("./")
-	if err != nil {
+	if err := addHelmRepos(chartDir); err != nil {
 		return "", err
 	}
+
 	fmt.Println("rendering helm templates to: " + dir)
-	err = sh.Run("helm", "dependency", "build")
-	if err != nil {
+
+	if err := runInDir(chartDir, "helm", "dependency", "build"); err != nil {
 		return "", err
 	}
-	err = sh.Run("helm", "template",
-		"--skip-tests",
-		"-f", strings.Join(source.Helm.ValueFiles, ","),
-		"--output-dir", dir,
-		".")
-	if err != nil {
+
+	args := []string{"template", "--skip-tests"}
+	for _, vf := range source.Helm.ValueFiles {
+		args = append(args, "-f", vf)
+	}
+	args = append(args, "--output-dir", dir, ".")
+	if err := runInDir(chartDir, "helm", args...); err != nil {
 		return "", err
 	}
-	err = os.Chdir(pwd)
-	if err != nil {
-		return "", err
-	}
+
 	return dir, nil
 }
 
