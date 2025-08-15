@@ -5,9 +5,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/golang/groupcache/singleflight"
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	addedRepoPaths   = make(map[string]struct{})
+	addedRepoPathsMu sync.RWMutex
+	addReposGroup    singleflight.Group
 )
 
 func renderTemplate(app ArgoCDApp) (string, error) {
@@ -186,36 +194,61 @@ func renderTemplatesAndValidate(validateKubeScore bool, validateKyverno bool, va
 	return nil
 }
 
+// addHelmRepos adds helm dependencies
+// caches earlier calls within the same run so that it doesn't need to be
+// re-run for the same path
 func addHelmRepos(path string) error {
 	defer since("addHelmRepos", time.Now(), map[string]any{"path": path})
 
-	var chart HelmChart
-	chartfile, err := os.ReadFile(filepath.Join(path, "Chart.yaml"))
-	if err != nil {
-		errorf("reading Chart.yaml failed path=%q: %v", path, err)
-		return err
+	addedRepoPathsMu.RLock()
+	_, ok := addedRepoPaths[path]
+	addedRepoPathsMu.RUnlock()
+	if ok {
+		infof("Helm repos for path=%q already added earlier, skipping", path)
+		return nil
 	}
-	debugf("Read Chart.yaml bytes=%d", len(chartfile))
 
-	if err := yaml.Unmarshal(chartfile, &chart); err != nil {
-		errorf("yaml unmarshal Chart.yaml failed: %v", err)
-		return err
-	}
-	infof("Chart dependencies found: %d", len(chart.Dependencies))
-
-	for _, dep := range chart.Dependencies {
-		if strings.HasPrefix(dep.Repository, "oci://") {
-			infof("Skipping helm repo add for OCI repository name=%q repo=%q", dep.Name, dep.Repository)
-			continue
+	_, err := addReposGroup.Do(path, func() (any, error) {
+		addedRepoPathsMu.RLock()
+		_, ok := addedRepoPaths[path]
+		addedRepoPathsMu.RUnlock()
+		if ok {
+			infof("Helm repos for path=%q were added concurrently, skipping", path)
+			return nil, nil
 		}
 
-		infof("Adding helm repo name=%q repo=%q", dep.Name, dep.Repository)
-		if err := runLogged("helm", "repo", "add", dep.Name, dep.Repository); err != nil {
-			return err
+		var chart HelmChart
+		chartfile, err := os.ReadFile(filepath.Join(path, "Chart.yaml"))
+		if err != nil {
+			errorf("reading Chart.yaml failed path=%q: %v", path, err)
+			return "", err
 		}
-	}
-	infof("Helm repos for path %q processed successfully", path)
-	return nil
+		debugf("Read Chart.yaml bytes=%d", len(chartfile))
+
+		if err := yaml.Unmarshal(chartfile, &chart); err != nil {
+			errorf("yaml unmarshal Chart.yaml failed: %v", err)
+			return "", err
+		}
+		infof("Chart dependencies found: %d", len(chart.Dependencies))
+
+		for _, dep := range chart.Dependencies {
+			if strings.HasPrefix(dep.Repository, "oci://") {
+				infof("Skipping helm repo add for OCI repository name=%q repo=%q", dep.Name, dep.Repository)
+				continue
+			}
+
+			infof("Adding helm repo name=%q repo=%q", dep.Name, dep.Repository)
+			if err := runLogged("helm", "repo", "add", dep.Name, dep.Repository); err != nil {
+				return "", err
+			}
+		}
+		addedRepoPathsMu.Lock()
+		addedRepoPaths[path] = struct{}{}
+		addedRepoPathsMu.Unlock()
+		return nil, nil
+	})
+
+	return err
 }
 
 // HelmChart contains all metadata of an helm chart
