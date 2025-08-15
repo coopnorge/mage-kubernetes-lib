@@ -115,24 +115,22 @@ func renderKustomize(path string) (string, error) {
 	return dir, nil
 }
 
-// Render templates to an temporary directory. Using a comma sep string here because
-// mg. can only have int, str and bools as arguments
-func renderTemplates() (string, error) {
-	defer since("renderTemplates", time.Now(), nil)
-
-	var files []string
+// Render templates to a temporary directory and validates using the selected
+// validators
+func renderTemplatesAndValidate(validateKubeScore bool, validateKyverno bool, validateKubeConform bool) error {
+	defer since("renderTemplatesAndValidate", time.Now(), nil)
 
 	repo, err := repoURL()
-	infof("Rendering templates for repo=%q", repo)
+	infof("Rendering templates and validating repo=%q", repo)
 	if err != nil {
 		errorf("repoURL failed: %v", err)
-		return "", err
+		return err
 	}
 
 	apps, err := getArgoCDDeployments(repo)
 	if err != nil {
 		errorf("getArgoCDDeployments failed: %v", err)
-		return "", fmt.Errorf("getting ArgoCD deployments failed: %w", err)
+		return fmt.Errorf("getting ArgoCD deployments failed: %w", err)
 	}
 	infof("Found %d ArgoCD apps to process", len(apps))
 
@@ -147,7 +145,7 @@ func renderTemplates() (string, error) {
 		templates, err := renderTemplate(trackedDeployment)
 		if err != nil {
 			errorf("renderTemplate failed for app=%q: %v", trackedDeployment.Metadata.Name, err)
-			return "", fmt.Errorf("rendering templates failed for %v: %w", trackedDeployment, err)
+			return fmt.Errorf("rendering templates failed for %v: %w", trackedDeployment, err)
 		}
 
 		if templates == "" {
@@ -159,15 +157,33 @@ func renderTemplates() (string, error) {
 		tackedFiles, err := listFilesInDirectory(templates)
 		if err != nil {
 			errorf("listFilesInDirectory failed dir=%q app=%q: %v", templates, trackedDeployment.Metadata.Name, err)
-			return "", fmt.Errorf("listing files failed for %v: %w", trackedDeployment, err)
+			return fmt.Errorf("listing files failed for %v: %w", trackedDeployment, err)
 		}
 		debugf("Discovered %d files in dir=%q", len(tackedFiles), templates)
 
-		files = append(files, tackedFiles...)
+		if validateKubeScore {
+			debugf("Running kubeScoreValidator on %d files of %q", len(tackedFiles), trackedDeployment.Metadata.Name)
+			if err := kubeScoreValidator(strings.Join(tackedFiles, ",")); err != nil {
+				return err
+			}
+		}
+
+		if validateKyverno {
+			debugf("Running kyvernoPoliciesValidator on %d files of %q", len(tackedFiles), trackedDeployment.Metadata.Name)
+			if err := kyvernoPoliciesValidator(strings.Join(tackedFiles, ",")); err != nil {
+				return err
+			}
+		}
+
+		if validateKubeConform {
+			debugf("Running kubeConformValidator on %d files of %q", len(tackedFiles), trackedDeployment.Metadata.Name)
+			if err := kubeConformValidator(strings.Join(tackedFiles, ","), "api-platform"); err != nil {
+				return err
+			}
+		}
 	}
 
-	infof("Aggregated total files=%d", len(files))
-	return strings.Join(files, ","), nil
+	return nil
 }
 
 func addHelmRepos(path string) error {

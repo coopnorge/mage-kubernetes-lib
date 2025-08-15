@@ -8,7 +8,7 @@ import (
 
 func TestFailedKubeScore(t *testing.T) {
 	paths := strings.Join([]string{"tests/templates/fail/templates/deployment.yaml", "tests/templates/fail/templates/service.yaml"}, ",")
-	err := kubeScore(paths)
+	err := kubeScoreValidator(paths)
 	if err == nil {
 		t.Fatalf(`kubeScore(paths) should fail but passed`)
 	}
@@ -16,7 +16,7 @@ func TestFailedKubeScore(t *testing.T) {
 
 func TestOKKubeScore(t *testing.T) {
 	paths := strings.Join([]string{"tests/templates/ok/templates/configmap.yaml"}, ",")
-	err := kubeScore(paths)
+	err := kubeScoreValidator(paths)
 	if err != nil {
 		t.Fatalf(`kubeScore(paths) should pass but failed with error %v`, err)
 	}
@@ -24,7 +24,7 @@ func TestOKKubeScore(t *testing.T) {
 
 func TestFailedKubeConform(t *testing.T) {
 	paths := strings.Join([]string{"tests/templates/fail-schema/templates/deployment.yaml", "tests/templates/fail-schema/templates/service.yaml"}, ",")
-	err := kubeConform(paths, "api-platform")
+	err := kubeConformValidator(paths, "api-platform")
 	if err == nil {
 		t.Fatalf(`kubeConform(paths,"api-platform) should fail but passed`)
 	}
@@ -32,7 +32,7 @@ func TestFailedKubeConform(t *testing.T) {
 
 func TestOKKubeConform(t *testing.T) {
 	paths := strings.Join([]string{"tests/templates/ok/templates/configmap.yaml"}, ",")
-	err := kubeConform(paths, "api-platform")
+	err := kubeConformValidator(paths, "api-platform")
 	if err != nil {
 		t.Fatalf(`kubeConform(paths,"api-platform) should pass but failed with error %v`, err)
 	}
@@ -41,7 +41,7 @@ func TestOKKubeConform(t *testing.T) {
 // Test for manifest files expected to fail Kyverno policy validation
 func TestFailedValidateKyverno(t *testing.T) {
 	path := "tests/templates/validate-fail/deployment-fail.yaml,tests/templates/validate-fail/deployment-fail.yaml,"
-	err := validateKyvernoPolicies(path)
+	err := kyvernoPoliciesValidator(path)
 	if err == nil {
 		t.Fatalf("Expected validation to fail for manifest %s, but it passed", path)
 	}
@@ -50,7 +50,7 @@ func TestFailedValidateKyverno(t *testing.T) {
 // Test for manifest files expected to pass Kyverno policy validation
 func TestOKValidateKyverno(t *testing.T) {
 	path := "tests/templates/validate/deployment-ok.yaml,tests/templates/validate/deployment2-ok.yaml,"
-	err := validateKyvernoPolicies(path)
+	err := kyvernoPoliciesValidator(path)
 	if err != nil {
 		t.Fatalf("Expected validation to pass for manifest %s, but it failed with error: %v", path, err)
 	}
