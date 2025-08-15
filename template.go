@@ -1,12 +1,17 @@
 package magekubernetes
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/magefile/mage/sh" // sh contains helpful utility functions, like RunV
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 )
 
@@ -80,35 +85,57 @@ func renderKustomize(path string) (string, error) {
 	return dir, nil
 }
 
-// Render templates to an temporary directory. Using a comma sep string here because
+// Render templates to a temporary directory. Using a comma sep string here because
 // mg. can only have int, str and bools as arguments
 func renderTemplates() (string, error) {
-	var files []string
 	repo, err := repoURL()
 	fmt.Println("rendering templates for repo: " + repo)
 	if err != nil {
 		return "", err
 	}
+
 	apps, err := getArgoCDDeployments(repo)
 	if err != nil {
 		return "", fmt.Errorf("getting ArgoCD deployments failed: %w", err)
 	}
-	for _, trackedDeployment := range apps {
-		templates, err := renderTemplate(trackedDeployment)
-		if err != nil {
-			return "", fmt.Errorf("rendering templates failed for %s: %w", trackedDeployment, err)
-		}
-		fmt.Println("listing files in templates directory: " + templates)
-		if templates == "" {
-			fmt.Println("templates is empty. Skipping listing files.")
-			continue
-		}
-		tackedFiles, err := listFilesInDirectory(templates)
-		if err != nil {
-			return "", fmt.Errorf("listing files failed for %s: %w", trackedDeployment, err)
-		}
-		files = append(files, tackedFiles...)
+
+	var (
+		files []string
+		mu    sync.Mutex
+	)
+
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(runtime.NumCPU() * 4)
+
+	for _, app := range apps {
+		app := app
+		g.Go(func() error {
+			templates, err := renderTemplate(app)
+			if err != nil {
+				return fmt.Errorf("rendering templates failed for %s: %w", app, err)
+			}
+			fmt.Println("listing files in templates directory: " + templates)
+			if templates == "" {
+				fmt.Println("templates is empty. Skipping listing files.")
+				return nil
+			}
+			trackedFiles, err := listFilesInDirectory(templates)
+			if err != nil {
+				return fmt.Errorf("listing files failed for %s: %w", app, err)
+			}
+			mu.Lock()
+			files = append(files, trackedFiles...)
+			mu.Unlock()
+			return nil
+		})
 	}
+
+	if err := g.Wait(); err != nil {
+		return "", err
+	}
+
+	sort.Strings(files)
+
 	return strings.Join(files, ","), nil
 }
 
