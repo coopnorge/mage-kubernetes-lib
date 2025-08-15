@@ -2,12 +2,20 @@ package magekubernetes
 
 import (
 	"fmt"
+	"github.com/golang/groupcache/singleflight"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	addedRepos   = make(map[string]struct{})
+	addedReposMu sync.RWMutex
+	addGroup     singleflight.Group
 )
 
 func renderTemplate(app ArgoCDApp) (string, error) {
@@ -170,6 +178,42 @@ func renderTemplates() (string, error) {
 	return strings.Join(files, ","), nil
 }
 
+// Adds a helm repo using `helm repo add`
+// If it has previously been run successfully during the same process with the
+// same parameters, it simply returns with success
+func addHelmRepo(repoName, repoURL string) error {
+	key := repoName + "::" + repoURL
+
+	addedReposMu.RLock()
+	_, ok := addedRepos[key]
+	addedReposMu.RUnlock()
+	if ok {
+		debugf("Skipping previously added helm repo name=%q repo=%q", repoName, repoURL)
+		return nil
+	}
+
+	_, err := addGroup.Do(key, func() (any, error) {
+		addedReposMu.RLock()
+		_, ok := addedRepos[key]
+		addedReposMu.RUnlock()
+		if ok {
+			return nil, nil
+		}
+
+		infof("Adding helm repo name=%q repo=%q", repoName, repoURL)
+		if err := runLogged("helm", "repo", "add", repoName, repoURL); err != nil {
+			return nil, err
+		}
+
+		addedReposMu.Lock()
+		addedRepos[key] = struct{}{}
+		addedReposMu.Unlock()
+		return nil, nil
+	})
+
+	return err
+}
+
 func addHelmRepos(path string) error {
 	defer since("addHelmRepos", time.Now(), map[string]any{"path": path})
 
@@ -192,9 +236,7 @@ func addHelmRepos(path string) error {
 			infof("Skipping helm repo add for OCI repository name=%q repo=%q", dep.Name, dep.Repository)
 			continue
 		}
-
-		infof("Adding helm repo name=%q repo=%q", dep.Name, dep.Repository)
-		if err := runLogged("helm", "repo", "add", dep.Name, dep.Repository); err != nil {
+		if err := addHelmRepo(dep.Name, dep.Repository); err != nil {
 			return err
 		}
 	}
