@@ -5,136 +5,200 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/magefile/mage/sh" // sh contains helpful utility functions, like RunV
 	"gopkg.in/yaml.v3"
 )
 
 func renderTemplate(app ArgoCDApp) (string, error) {
-	fmt.Printf("Preparing to render template for app: %s\n", app.Metadata.Name)
+	defer since("renderTemplate", time.Now(), map[string]any{
+		"app": app.Metadata.Name,
+	})
+
+	infof("Preparing to render template for app name=%q sourcePath=%q sourceType=%q",
+		app.Metadata.Name, app.Spec.Source.Path, app.Status.SourceType)
+
 	if app.Status.SourceType == "Helm" {
-		fmt.Printf("Rendering helm %s\n", app.Spec.Source.Path)
+		infof("Selected renderer=helm path=%q", app.Spec.Source.Path)
 		return renderHelm(app.Spec.Source)
 	} else if isKustomizeDir(app.Spec.Source.Path) {
-		fmt.Printf("Rendering kustomize %s\n", app.Spec.Source.Path)
+		infof("Selected renderer=kustomize path=%q", app.Spec.Source.Path)
 		return renderKustomize(app.Spec.Source.Path)
 	}
-	fmt.Printf("Rendering template %s\n", app.Spec.Source.Path)
+	infof("Selected renderer=raw path=%q", app.Spec.Source.Path)
 	return app.Spec.Source.Path, nil
 }
 
 func renderHelm(source ArgoCDAppSource) (string, error) {
+	defer since("renderHelm", time.Now(), map[string]any{
+		"path": source.Path,
+	})
 	dir, err := tempDir()
 	if err != nil {
+		errorf("tempDir failed: %v", err)
 		return "", err
 	}
+	infof("Helm render tempDir=%q", dir)
+
 	pwd, err := os.Getwd()
 	if err != nil {
+		errorf("Getwd failed: %v", err)
 		return "", err
 	}
-	err = os.Chdir(source.Path)
-	if err != nil {
+	debugf("cwd before chdir=%q", pwd)
+
+	if err := os.Chdir(source.Path); err != nil {
 		// dont error here, it seems we cannot
 		// find the directory so we dont render templates
 		// cause could be wrong configuration of the argocd app
 		// or the new config is not yet on the main branch
-		fmt.Printf("Directory %s not found. Skipping rendering manifests.\n", source.Path)
+		warnf("Directory %q not found; skipping helm rendering (likely misconfig or not yet merged).", source.Path)
 		return "", nil
 	}
-	// temporary fix  until https://github.com/helm/helm/issues/7214 is fixed
+
+	// restore original working directory when done
+	defer func() {
+		if chErr := os.Chdir(pwd); chErr != nil {
+			errorf("failed to restore working directory to %q: %v", pwd, chErr)
+		} else {
+			debugf("restored working directory to %q", pwd)
+		}
+	}()
+
+	// temporary fix until https://github.com/helm/helm/issues/7214 is fixed
 	// again
-	err = addHelmRepos("./")
-	if err != nil {
+	if err := addHelmRepos("./"); err != nil {
+		errorf("addHelmRepos failed: %v", err)
 		return "", err
 	}
-	fmt.Println("rendering helm templates to: " + dir)
-	err = sh.Run("helm", "dependency", "build")
-	if err != nil {
+
+	infof("Rendering helm templates to %q", dir)
+
+	if err := runLogged("helm", "dependency", "build"); err != nil {
 		return "", err
 	}
-	err = sh.Run("helm", "template",
+
+	values := strings.Join(source.Helm.ValueFiles, ",")
+	if values == "" {
+		warnf("No Helm value files provided")
+	} else {
+		debugf("Helm value files: %q", values)
+	}
+
+	if err := runLogged("helm", "template",
 		"--skip-tests",
-		"-f", strings.Join(source.Helm.ValueFiles, ","),
+		"-f", values,
 		"--output-dir", dir,
-		".")
-	if err != nil {
+		"."); err != nil {
 		return "", err
 	}
-	err = os.Chdir(pwd)
-	if err != nil {
-		return "", err
-	}
+
+	infof("Helm rendering complete outputDir=%q", dir)
 	return dir, nil
 }
 
 func renderKustomize(path string) (string, error) {
+	defer since("renderKustomize", time.Now(), map[string]any{
+		"path": path,
+	})
 	dir, err := tempDir()
 	if err != nil {
+		errorf("tempDir failed: %v", err)
 		return "", err
 	}
-	fmt.Println("rendering kustomize templates: " + dir)
-	err = sh.Run("kustomize", "build", path, "--output", dir)
-	if err != nil {
+	infof("Rendering kustomize templates outputDir=%q", dir)
+
+	if err := runLogged("kustomize", "build", path, "--output", dir); err != nil {
 		return "", err
 	}
+	infof("Kustomize rendering complete outputDir=%q", dir)
 	return dir, nil
 }
 
 // Render templates to an temporary directory. Using a comma sep string here because
 // mg. can only have int, str and bools as arguments
 func renderTemplates() (string, error) {
+	defer since("renderTemplates", time.Now(), nil)
+
 	var files []string
+
 	repo, err := repoURL()
-	fmt.Println("rendering templates for repo: " + repo)
+	infof("Rendering templates for repo=%q", repo)
 	if err != nil {
+		errorf("repoURL failed: %v", err)
 		return "", err
 	}
+
 	apps, err := getArgoCDDeployments(repo)
 	if err != nil {
+		errorf("getArgoCDDeployments failed: %v", err)
 		return "", fmt.Errorf("getting ArgoCD deployments failed: %w", err)
 	}
-	for _, trackedDeployment := range apps {
+	infof("Found %d ArgoCD apps to process", len(apps))
+
+	for i, trackedDeployment := range apps {
+		infof("(%d/%d) Start app name=%q path=%q sourceType=%q",
+			i+1, len(apps),
+			trackedDeployment.Metadata.Name,
+			trackedDeployment.Spec.Source.Path,
+			trackedDeployment.Status.SourceType,
+		)
+
 		templates, err := renderTemplate(trackedDeployment)
 		if err != nil {
-			return "", fmt.Errorf("rendering templates failed for %s: %w", trackedDeployment, err)
+			errorf("renderTemplate failed for app=%q: %v", trackedDeployment.Metadata.Name, err)
+			return "", fmt.Errorf("rendering templates failed for %v: %w", trackedDeployment, err)
 		}
-		fmt.Println("listing files in templates directory: " + templates)
+
 		if templates == "" {
-			fmt.Println("templates is empty. Skipping listing files.")
+			warnf("Templates path is empty for app=%q; skipping file listing", trackedDeployment.Metadata.Name)
 			continue
 		}
+
+		infof("Listing files in templates directory dir=%q app=%q", templates, trackedDeployment.Metadata.Name)
 		tackedFiles, err := listFilesInDirectory(templates)
 		if err != nil {
-			return "", fmt.Errorf("listing files failed for %s: %w", trackedDeployment, err)
+			errorf("listFilesInDirectory failed dir=%q app=%q: %v", templates, trackedDeployment.Metadata.Name, err)
+			return "", fmt.Errorf("listing files failed for %v: %w", trackedDeployment, err)
 		}
+		debugf("Discovered %d files in dir=%q", len(tackedFiles), templates)
+
 		files = append(files, tackedFiles...)
 	}
+
+	infof("Aggregated total files=%d", len(files))
 	return strings.Join(files, ","), nil
 }
 
 func addHelmRepos(path string) error {
+	defer since("addHelmRepos", time.Now(), map[string]any{"path": path})
+
 	var chart HelmChart
 	chartfile, err := os.ReadFile(filepath.Join(path, "Chart.yaml"))
 	if err != nil {
+		errorf("reading Chart.yaml failed path=%q: %v", path, err)
 		return err
 	}
-	err = yaml.Unmarshal([]byte(chartfile), &chart)
-	if err != nil {
+	debugf("Read Chart.yaml bytes=%d", len(chartfile))
+
+	if err := yaml.Unmarshal(chartfile, &chart); err != nil {
+		errorf("yaml unmarshal Chart.yaml failed: %v", err)
 		return err
 	}
+	infof("Chart dependencies found: %d", len(chart.Dependencies))
+
 	for _, dep := range chart.Dependencies {
 		if strings.HasPrefix(dep.Repository, "oci://") {
-			fmt.Println("skipping repo add for oci repository: " + dep.Repository)
+			infof("Skipping helm repo add for OCI repository name=%q repo=%q", dep.Name, dep.Repository)
 			continue
 		}
 
-		fmt.Println("adding repo: " + dep.Repository)
-
-		err := sh.Run("helm", "repo", "add", dep.Name, dep.Repository)
-		if err != nil {
+		infof("Adding helm repo name=%q repo=%q", dep.Name, dep.Repository)
+		if err := runLogged("helm", "repo", "add", dep.Name, dep.Repository); err != nil {
 			return err
 		}
 	}
+	infof("Helm repos for path %q processed successfully", path)
 	return nil
 }
 
