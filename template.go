@@ -79,17 +79,26 @@ func renderHelm(source ArgoCDAppSource) (string, error) {
 	}
 
 	values := strings.Join(source.Helm.ValueFiles, ",")
-	if values == "" {
-		warnf("No Helm value files provided")
-	} else {
+	if values != "" {
 		debugf("Helm value files: %q", values)
 	}
 
-	if err := runLogged("helm", "template",
-		"--skip-tests",
-		"-f", values,
-		"--output-dir", dir,
-		"."); err != nil {
+	args := []string{"template", "--skip-tests", "--output-dir", dir, "."}
+
+	for _, vf := range source.Helm.ValueFiles {
+		args = append(args, "-f", vf)
+	}
+
+	if strings.TrimSpace(source.Helm.Values) != "" {
+		tmp := filepath.Join(os.TempDir(), fmt.Sprintf("inline-values-%d.yaml", time.Now().UnixNano()))
+		debugf("Writing helm values to a temp file %q: %q", tmp, source.Helm.Values)
+		if err := os.WriteFile(tmp, []byte(source.Helm.Values), 0o600); err != nil {
+			return "", fmt.Errorf("write inline values: %w", err)
+		}
+		args = append(args, "-f", tmp)
+	}
+
+	if err := runLogged("helm", args...); err != nil {
 		return "", err
 	}
 
