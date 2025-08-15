@@ -1,9 +1,14 @@
 package magekubernetes
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/magefile/mage/sh"
 )
 
 func listFilesInDirectory(path string) ([]string, error) {
@@ -49,4 +54,28 @@ func getBoolEnv(key string, defaultValue bool) (bool, error) {
 		return defaultValue, err
 	}
 	return b, nil
+}
+
+func since(msg string, start time.Time, fields map[string]any) {
+	d := time.Since(start)
+	var parts []string
+	for k, v := range fields {
+		parts = append(parts, fmt.Sprintf("%s=%v", k, v))
+	}
+	if len(parts) > 0 {
+		infof("%s done in %s (%s)", msg, d, strings.Join(parts, " "))
+	} else {
+		infof("%s done in %s", msg, d)
+	}
+}
+
+// runLogged logs the exact command (with safe shell-style quoting) and runs it.
+func runLogged(name string, args ...string) error {
+	cmdline := strings.Join(append([]string{name}, args...), " ")
+	debugf("Running: %s", cmdline)
+	if err := sh.Run(name, args...); err != nil {
+		errorf("Command failed: %s: %v", cmdline, err)
+		return err
+	}
+	return nil
 }
