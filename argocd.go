@@ -13,6 +13,7 @@ import (
 type ArgoCDAppHelm struct {
 	ReleaseName string   `yaml:"releaseName"`
 	ValueFiles  []string `yaml:"valueFiles"`
+	Values      string   `yaml:"values"`
 }
 
 // ArgoCDAppSource contains the info where to find the source for rendering
