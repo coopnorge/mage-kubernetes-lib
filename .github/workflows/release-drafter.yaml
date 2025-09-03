@@ -18,4 +18,4 @@ jobs:
       pull-requests: write
       contents: write
       issues: write
-    uses: coopnorge/github-workflow-release-drafter/.github/workflows/release-drafter-go.yaml@v0.9.0
+    uses: coopnorge/github-workflow-release-drafter/.github/workflows/release-drafter-go.yaml@v0.10.0
