@@ -15,8 +15,8 @@ func renderTemplate(app ArgoCDApp) (string, error) {
 		"app": app.Metadata.Name,
 	})
 
-	infof("Preparing to render template for app name=%q sourcePath=%q sourceType=%q",
-		app.Metadata.Name, app.Spec.Source.Path, app.Status.SourceType)
+	infof("Preparing to render template for app name=%q sourcePath=%q sourceType=%q releaseName=%q",
+		app.Metadata.Name, app.Spec.Source.Path, app.Status.SourceType, app.Spec.Source.Helm.ReleaseName)
 
 	if app.Spec.Source.Helm.ReleaseName != "" || app.Status.SourceType == "Helm" {
 		infof("Selected renderer=helm path=%q", app.Spec.Source.Path)
