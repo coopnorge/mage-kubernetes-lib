@@ -18,7 +18,7 @@ func renderTemplate(app ArgoCDApp) (string, error) {
 	infof("Preparing to render template for app name=%q sourcePath=%q sourceType=%q",
 		app.Metadata.Name, app.Spec.Source.Path, app.Status.SourceType)
 
-	if app.Status.SourceType == "Helm" {
+	if app.Spec.Source.Helm.ReleaseName != "" || app.Status.SourceType == "Helm" {
 		infof("Selected renderer=helm path=%q", app.Spec.Source.Path)
 		return renderHelm(app.Spec.Source)
 	} else if isKustomizeDir(app.Spec.Source.Path) {
