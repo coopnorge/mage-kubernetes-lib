@@ -112,6 +112,16 @@ func TestFailValidateEnvVars(t *testing.T) {
 	}
 }
 
+func TestOKMultipleContextValidateEnvVars(t *testing.T) {
+	files, err := listFilesInDirectory("tests/envvars/ok-multiple-env-contexts")
+	if err != nil {
+		t.Fatalf("listFilesInDirectory failed: %v", err)
+	}
+	if err := envVarsValidator(files); err != nil {
+		t.Errorf("expected no duplicate env vars, got error: %v", err)
+	}
+}
+
 func TestFailExistingEnvValidateEnvVars(t *testing.T) {
 	appSource := &ArgoCDAppSource{
 		Path: "tests/envvars/fail-existing-env",

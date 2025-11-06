@@ -91,8 +91,6 @@ func kubeConformValidator(paths string, schemaSelection string) error {
 }
 
 func envVarsValidator(files []string) error {
-	seen := make(map[string]struct{})
-
 	for _, file := range files {
 		data, err := os.ReadFile(file)
 		if err != nil {
@@ -109,17 +107,18 @@ func envVarsValidator(files []string) error {
 				return fmt.Errorf("decoding yaml in %q failed: %w", file, err)
 			}
 
+			seen := make(map[string]struct{})
+
 			for _, envList := range findEnvLists(doc) {
 				for _, item := range envList {
 					env, ok := item.(map[string]interface{})
 					if !ok {
 						continue
 					}
-					nameVal, ok := env["name"].(string)
-					if !ok || nameVal == "" {
+					name, ok := env["name"].(string)
+					if !ok || name == "" {
 						continue
 					}
-					name := nameVal
 					if _, exists := seen[name]; exists {
 						return fmt.Errorf("duplicate env var %q found in file %q", name, file)
 					}

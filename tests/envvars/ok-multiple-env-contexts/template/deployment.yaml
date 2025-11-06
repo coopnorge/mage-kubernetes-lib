@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-one
+spec:
+  template:
+    spec:
+      containers:
+        - name: app-one
+          image: example/app-one:v1
+          env:
+            - name: FOO
+              value: bar
+            - name: BAZ
+              value: qux
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-two
+spec:
+  template:
+    spec:
+      containers:
+        - name: app-two
+          image: example/app-two:v1
+          env:
+            - name: FOO
+              value: somethingelse
+            - name: XYZ
+              value: abc
