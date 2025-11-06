@@ -79,3 +79,23 @@ func runLogged(name string, args ...string) error {
 	}
 	return nil
 }
+
+func findEnvLists(obj interface{}) [][]interface{} {
+	var lists [][]interface{}
+	switch v := obj.(type) {
+	case map[string]interface{}:
+		for k, val := range v {
+			if k == "env" {
+				if arr, ok := val.([]interface{}); ok {
+					lists = append(lists, arr)
+				}
+			}
+			lists = append(lists, findEnvLists(val)...)
+		}
+	case []interface{}:
+		for _, item := range v {
+			lists = append(lists, findEnvLists(item)...)
+		}
+	}
+	return lists
+}

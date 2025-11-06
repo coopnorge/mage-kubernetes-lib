@@ -56,6 +56,91 @@ func TestOKValidateKyverno(t *testing.T) {
 	}
 }
 
+func TestOKValidateEnvVars(t *testing.T) {
+	appSource := &ArgoCDAppSource{
+		Path: "tests/envvars/ok",
+		Helm: ArgoCDAppHelm{
+			ReleaseName: "test",
+			ValueFiles:  []string{"values.yaml"},
+		},
+	}
+
+	outDir, err := renderHelm(*appSource)
+	if err != nil {
+		t.Fatalf("renderHelm failed: %v", err)
+	}
+	if outDir == "" {
+		t.Skip("renderHelm returned empty dir (likely missing chart path)")
+	}
+
+	files, err := listFilesInDirectory(outDir)
+	if err != nil {
+		t.Fatalf("listFilesInDirectory failed: %v", err)
+	}
+
+	if err := envVarsValidator(files); err != nil {
+		t.Errorf("expected no duplicate env vars, got error: %v", err)
+	}
+}
+
+func TestFailValidateEnvVars(t *testing.T) {
+	appSource := &ArgoCDAppSource{
+		Path: "tests/envvars/fail",
+		Helm: ArgoCDAppHelm{
+			ReleaseName: "test",
+			ValueFiles:  []string{"values.yaml"},
+		},
+	}
+
+	outDir, err := renderHelm(*appSource)
+	if err != nil {
+		t.Fatalf("renderHelm failed: %v", err)
+	}
+	if outDir == "" {
+		t.Skip("renderHelm returned empty dir (likely missing chart path)")
+	}
+
+	files, err := listFilesInDirectory(outDir)
+	if err != nil {
+		t.Fatalf("listFilesInDirectory failed: %v", err)
+	}
+
+	if err := envVarsValidator(files); err == nil {
+		t.Error("expected duplicate env vars to be detected, got nil")
+	} else {
+		t.Logf("duplicate env var detection succeeded: %v", err)
+	}
+}
+
+func TestFailExistingEnvValidateEnvVars(t *testing.T) {
+	appSource := &ArgoCDAppSource{
+		Path: "tests/envvars/fail-existing-env",
+		Helm: ArgoCDAppHelm{
+			ReleaseName: "test",
+			ValueFiles:  []string{"values.yaml"},
+		},
+	}
+
+	outDir, err := renderHelm(*appSource)
+	if err != nil {
+		t.Fatalf("renderHelm failed: %v", err)
+	}
+	if outDir == "" {
+		t.Skip("renderHelm returned empty dir (likely missing chart path)")
+	}
+
+	files, err := listFilesInDirectory(outDir)
+	if err != nil {
+		t.Fatalf("listFilesInDirectory failed: %v", err)
+	}
+
+	if err := envVarsValidator(files); err == nil {
+		t.Error("expected duplicate env vars to be detected, got nil")
+	} else {
+		t.Logf("duplicate env var detection succeeded: %v", err)
+	}
+}
+
 // Test for getBoolEnv returning expected values
 func TestGetBoolEnv(t *testing.T) {
 	os.Setenv("TEST_BOOL_1", "1")

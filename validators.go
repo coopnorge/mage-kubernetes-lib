@@ -1,8 +1,14 @@
 package magekubernetes
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
+	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/magefile/mage/sh"
 )
@@ -81,5 +87,48 @@ func kubeConformValidator(paths string, schemaSelection string) error {
 		return err
 	}
 	fmt.Println("kubeconform passed")
+	return nil
+}
+
+func envVarsValidator(files []string) error {
+	seen := make(map[string]struct{})
+
+	for _, file := range files {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("reading %q failed: %w", file, err)
+		}
+
+		dec := yaml.NewDecoder(bytes.NewReader(data))
+		for {
+			var doc map[string]interface{}
+			if err := dec.Decode(&doc); err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return fmt.Errorf("decoding yaml in %q failed: %w", file, err)
+			}
+
+			for _, envList := range findEnvLists(doc) {
+				for _, item := range envList {
+					env, ok := item.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					nameVal, ok := env["name"].(string)
+					if !ok || nameVal == "" {
+						continue
+					}
+					name := nameVal
+					if _, exists := seen[name]; exists {
+						return fmt.Errorf("duplicate env var %q found in file %q", name, file)
+					}
+					seen[name] = struct{}{}
+				}
+			}
+		}
+	}
+
+	fmt.Println("envVars passed")
 	return nil
 }

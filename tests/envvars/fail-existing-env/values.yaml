@@ -1,0 +1,4 @@
+---
+app:
+  environmentVariables:
+    DD_ENV: "dd-env"

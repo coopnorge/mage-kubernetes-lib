@@ -1,0 +1,6 @@
+dependencies:
+- name: coop-app-chart
+  repository: oci://europe-docker.pkg.dev/helmbasecharts-shared-5ebb/coop-helm-charts
+  version: 0.27.0
+digest: sha256:4f85ccb8cf3cb8c440f90de5ba178bbf91d4f10113de871b3419df89c3f0173e
+generated: "2025-11-06T15:54:16.580394+01:00"

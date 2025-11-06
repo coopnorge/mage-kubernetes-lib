@@ -1,0 +1,11 @@
+---
+app:
+  environmentVariables:
+    DUPLICATE_KEY: "from-environmentVariables"
+
+  secrets:
+    example-project:
+      provider: gcp
+      secrets:
+        DUPLICATE_KEY: duplicate-secret-value
+      mountAsEnvironment: true

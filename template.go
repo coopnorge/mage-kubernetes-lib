@@ -170,6 +170,12 @@ func renderTemplatesAndValidate(validateKubeScore bool, validateKyverno bool, va
 		}
 		debugf("Discovered %d files in dir=%q", len(tackedFiles), templates)
 
+		infof("Validating env vars on %d files of %q", len(tackedFiles), trackedDeployment.Metadata.Name)
+		if err := envVarsValidator(tackedFiles); err != nil {
+			errorf("duplicate env vars detected: %v", err)
+			return err
+		}
+
 		if validateKubeScore {
 			debugf("Running kubeScoreValidator on %d files of %q", len(tackedFiles), trackedDeployment.Metadata.Name)
 			if err := kubeScoreValidator(strings.Join(tackedFiles, ",")); err != nil {
