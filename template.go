@@ -218,6 +218,11 @@ func addHelmRepos(path string) error {
 			continue
 		}
 
+		if dep.Repository == "" {
+			infof("Skipping helm repo add for local dependency name=%q", dep.Name)
+			continue
+		}
+
 		infof("Adding helm repo name=%q repo=%q", dep.Name, dep.Repository)
 		if err := runLogged("helm", "repo", "add", dep.Name, dep.Repository); err != nil {
 			return err
