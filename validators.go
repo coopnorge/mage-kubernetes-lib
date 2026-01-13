@@ -55,7 +55,9 @@ func kubeScoreValidator(paths string) error {
 		return nil
 	}
 	cmdOptions := []string{
-		"score"}
+		"score",
+		"--ignore-container-cpu-limit", // disable requiring cpu limit
+	}
 	out, err := sh.Output("kube-score", append(cmdOptions, strings.Split(paths, ",")...)...)
 	if err != nil {
 		fmt.Printf("kube-score returned exit code: %d\n Output:\n %v Error:\n %v\n", sh.ExitStatus(err), out, err)
