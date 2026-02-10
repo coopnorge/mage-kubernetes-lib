@@ -3,7 +3,7 @@ module github.com/coopnorge/mage-kubernetes-lib
 go 1.25.0
 
 require (
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/magefile/mage v1.15.0
 	gopkg.in/yaml.v3 v3.0.1
 )
