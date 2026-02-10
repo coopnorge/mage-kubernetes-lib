@@ -8,6 +8,7 @@ metadata:
 spec:
   description: Mage library to support kubernetes related ci
   visibility: public
+  issues: true
   branches:
     default: main
     protection:
