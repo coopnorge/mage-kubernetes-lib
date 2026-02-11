@@ -9,7 +9,7 @@
     "automergeStrategy": "squash",
     "lockFileMaintenance": {
         "enabled": true,
-    }
+    },
     "postUpdateOptions": [
         "gomodTidy",
         "gomodUpdateImportPaths",
