@@ -7,4 +7,8 @@
     "labels": ["dependencies", "renovate"],
     "automerge": true,
     "automergeStrategy": "squash",
+    "postUpdateOptions": [
+        "gomodTidy",
+        "gomodUpdateImportPaths",
+    ],
 }
