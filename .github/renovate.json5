@@ -7,4 +7,7 @@
     "labels": ["dependencies", "renovate"],
     "automerge": true,
     "automergeStrategy": "squash",
+    "lockFileMaintenance": {
+        "enabled": true,
+    }
 }
