@@ -54,6 +54,7 @@ jobs:
           # Override schedule if set
           RENOVATE_FORCE: "true"
           LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+          RENOVATE_DETECT_HOST_RULES_FROM_ENV: "true"
           RENOVATE_DOCKER_DOCKER_IO_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           RENOVATE_DOCKER_DOCKER_IO_PASSWORD: ${{ secrets.DOCKER_HUB_PAT }}
           RENOVATE_TERRAFORM__MODULE_APP_SPACELIFT_IO_TOKEN: ${{ secrets.SPACELIFT_READ_TOKEN }}
