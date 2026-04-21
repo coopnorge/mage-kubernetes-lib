@@ -33,7 +33,7 @@ jobs:
 
       - name: Get token
         id: get_token
-        uses: actions/create-github-app-token@v3.0.0
+        uses: actions/create-github-app-token@v3.1.1
         with:
           app-id: 635546
           private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY_PEM }}
