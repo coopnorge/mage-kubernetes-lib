@@ -1,4 +1,4 @@
-FROM quay.io/argoproj/argocd:v3.3.6@sha256:16b92ba472fbb9287459cc52e0ecff07288dff461209955098edb56ce866fe49 AS argocd
+FROM quay.io/argoproj/argocd:v3.3.7@sha256:31f494ef5ad17b8dfd4e03fbae79c57cfadede325ed16a1794ee9ce20ca5d759 AS argocd
 FROM zegl/kube-score:v1.20.0@sha256:ac4c43ad560af905d66f6bf57b0937c591332e6dbf2167c31193a13b4695ab97 as kube-score
 FROM ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c as kubeconform
 FROM ghcr.io/kyverno/kyverno-cli:v1.17.1@sha256:3a7addf83897abae291361dfccbdf63cba5926c7795fe44e527883ae2237e4b8 AS kyverno
