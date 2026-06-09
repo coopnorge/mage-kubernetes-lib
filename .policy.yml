@@ -3,16 +3,17 @@
 policy:
   approval:
   - or:
-    - Dependabot update
+    - Dependency updates
     - Code change
 
 approval_rules:
   # This rule matches when a pr is created by dependabot
-- name: Dependabot update
+- name: Dependency updates
   if:
     only_has_contributors_in:
       users:
       - "dependabot[bot]"
+      - renovate-coop-norge[bot]
     only_changed_files:
       paths:
       - "^.github/workflows/.*$"
@@ -39,7 +40,7 @@ approval_rules:
   if:
     changed_files:
       paths:
-        - ".*"
+      - ".*"
   requires:
     count: 1
     teams:
