@@ -3,7 +3,7 @@ FROM zegl/kube-score:v1.20.0@sha256:ac4c43ad560af905d66f6bf57b0937c591332e6dbf21
 FROM ghcr.io/yannh/kubeconform:v0.8.0@sha256:faffaf43f95aa6425306e1ab8d6fcad72acb9049158f38e574c085ea1ec0f64e as kubeconform
 FROM ghcr.io/kyverno/kyverno-cli:v1.18.1@sha256:b7e272572d244ddec0b83469f7200ba883555bf69de4b294cee52a197c8c6590 AS kyverno
 
-FROM ghcr.io/coopnorge/engineering-docker-images/e0/devtools-golang-v1beta1:latest@sha256:8611c0467d60d53984ec8d57bcaac5d3159cb7ba1d02936de29659feea8c38be AS golang-devtools
+FROM ghcr.io/coopnorge/engineering-docker-images/e0/devtools-golang-v1beta1:latest@sha256:0dd907b0e2345c5cdf8962aa55c88fa40e918e99dd09ec84c7f842e33a8bb55b AS golang-devtools
 
 COPY --from=kube-score /kube-score /usr/local/bin/kube-score
 COPY --from=argocd /usr/local/bin/argocd /usr/local/bin/argocd
