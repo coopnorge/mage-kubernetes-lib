@@ -24,7 +24,7 @@ approval_rules:
     # a dependabot pr requires 1 review of review bot or a user
     count: 1
     teams:
-    - "coopnorge/engineering"
+    - "coopnorge/backend-and-platform-engineering"
     users:
     - "coop-norge-review-bot"
   options:
@@ -44,7 +44,7 @@ approval_rules:
   requires:
     count: 1
     teams:
-    - "coopnorge/engineering"
+    - "coopnorge/backend-and-platform-engineering"
   options:
     invalidate_on_push: true
     request_review:
