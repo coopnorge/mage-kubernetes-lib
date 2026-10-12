@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: secure-container
-          image: nginx:1.21.6           # Uses a specific tag instead of 'latest'
+          image: nginx:1.21.6@sha256:2bcabc23b45489fb0885d69a06ba1d648aeda973fae7bb981bafbb884165e514           # Uses a specific tag instead of 'latest'
           securityContext:
             runAsNonRoot: true           # Enforces running as a non-root user
             allowPrivilegeEscalation: false # Prevents privilege escalation

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: insecure-container
-          image: nginx:latest   # Violates "no latest tag" policy
+          image: nginx:1.31@sha256:f9ea18bfa4fad859e1ed38259d711da7ccad2c3516e875cec3351a57c859f571   # Violates "no latest tag" policy
           securityContext:
             capabilities:       # Violates "disallow capabilities" policy
               add:

@@ -24,7 +24,7 @@ spec:
         - name: ok
           securityContext:
             {}
-          image: "nginx:1.16.0"
+          image: "nginx:1.16.0@sha256:3e373fd5b8d41baeddc24be311c5c6929425c04cabf893b874ac09b72a798010"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
